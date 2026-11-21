@@ -1,0 +1,156 @@
+/*
+ * Design tokens. Primitive values are defined once; semantic tokens reference them and are
+ * switched per theme. Components must only use semantic tokens.
+ * All foreground/background pairs meet WCAG AA (≥ 4.5:1 for text, ≥ 3:1 for UI).
+ */
+:root {
+  /* Primitives */
+  --ds-blue-50: #eef4ff;
+  --ds-blue-100: #dbe6fe;
+  --ds-blue-300: #8fb0f8;
+  --ds-blue-500: #3b6fe0;
+  --ds-blue-600: #2754c5;
+  --ds-blue-700: #1f43a0;
+  --ds-gray-0: #ffffff;
+  --ds-gray-50: #f6f7f9;
+  --ds-gray-100: #eceef2;
+  --ds-gray-200: #dadde4;
+  --ds-gray-400: #9aa1ad;
+  --ds-gray-500: #6b7280;
+  --ds-gray-600: #4b5260;
+  --ds-gray-700: #353a45;
+  --ds-gray-800: #23262e;
+  --ds-gray-900: #16181d;
+  --ds-gray-950: #0e0f12;
+  --ds-red-500: #d33a3a;
+  --ds-red-600: #b42828;
+  --ds-red-300: #f08a8a;
+  --ds-green-600: #1f7a45;
+  --ds-green-300: #6fd39c;
+  --ds-amber-500: #c97a06;
+  --ds-amber-300: #f5b94b;
+
+  /* Typography */
+  --ds-font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ds-font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --ds-font-size-xs: 0.75rem;
+  --ds-font-size-sm: 0.875rem;
+  --ds-font-size-md: 1rem;
+  --ds-font-size-lg: 1.125rem;
+  --ds-font-size-xl: 1.375rem;
+  --ds-font-size-2xl: 1.75rem;
+  --ds-font-size-3xl: 2.25rem;
+  --ds-font-weight-regular: 400;
+  --ds-font-weight-medium: 500;
+  --ds-font-weight-bold: 650;
+  --ds-line-height-tight: 1.2;
+  --ds-line-height-normal: 1.5;
+
+  /* Spacing (4px base) */
+  --ds-space-0: 0;
+  --ds-space-1: 0.25rem;
+  --ds-space-2: 0.5rem;
+  --ds-space-3: 0.75rem;
+  --ds-space-4: 1rem;
+  --ds-space-5: 1.5rem;
+  --ds-space-6: 2rem;
+  --ds-space-7: 3rem;
+
+  /* Radii */
+  --ds-radius-sm: 4px;
+  --ds-radius-md: 8px;
+  --ds-radius-lg: 14px;
+  --ds-radius-full: 999px;
+
+  /* Sizing */
+  --ds-touch-target: 44px;
+  --ds-control-height: 40px;
+  --ds-control-height-sm: 32px;
+  --ds-toolbar-height: 56px;
+  --ds-sidebar-width: 320px;
+
+  /* Motion */
+  --ds-duration-fast: 120ms;
+  --ds-duration-normal: 220ms;
+  --ds-easing: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Z-index scale */
+  --ds-z-base: 0;
+  --ds-z-raised: 10;
+  --ds-z-toolbar: 100;
+  --ds-z-sheet: 200;
+  --ds-z-overlay: 300;
+  --ds-z-dialog: 400;
+  --ds-z-toast: 500;
+  --ds-z-tooltip: 600;
+
+  /* Semantic tokens – light theme */
+  color-scheme: light;
+  --ds-color-bg: var(--ds-gray-50);
+  --ds-color-surface: var(--ds-gray-0);
+  --ds-color-surface-raised: var(--ds-gray-0);
+  --ds-color-surface-sunken: var(--ds-gray-100);
+  --ds-color-border: var(--ds-gray-200);
+  --ds-color-border-strong: var(--ds-gray-400);
+  --ds-color-text: var(--ds-gray-900);
+  --ds-color-text-muted: var(--ds-gray-600);
+  --ds-color-text-inverse: var(--ds-gray-0);
+  --ds-color-primary: var(--ds-blue-600);
+  --ds-color-primary-hover: var(--ds-blue-700);
+  --ds-color-primary-subtle: var(--ds-blue-50);
+  --ds-color-on-primary: var(--ds-gray-0);
+  --ds-color-danger: var(--ds-red-600);
+  --ds-color-success: var(--ds-green-600);
+  --ds-color-warning: var(--ds-amber-500);
+  --ds-color-focus: var(--ds-blue-500);
+  --ds-color-backdrop: rgb(14 15 18 / 45%);
+
+  /* Planner canvas */
+  --ds-canvas-bg: #f3f1ec;
+  --ds-canvas-grid: rgb(0 0 0 / 6%);
+  --ds-canvas-grid-major: rgb(0 0 0 / 12%);
+  --ds-canvas-wall: #4a4f5a;
+  --ds-canvas-selection: var(--ds-blue-500);
+  --ds-canvas-collision: var(--ds-red-500);
+  --ds-canvas-guide: #e0399a;
+  --ds-canvas-dimension: var(--ds-gray-700);
+
+  /* Shadows */
+  --ds-shadow-sm: 0 1px 2px rgb(16 24 40 / 8%);
+  --ds-shadow-md: 0 4px 12px rgb(16 24 40 / 12%);
+  --ds-shadow-lg: 0 16px 40px rgb(16 24 40 / 20%);
+}
+
+@mixin dark-theme {
+  color-scheme: dark;
+  --ds-color-bg: var(--ds-gray-950);
+  --ds-color-surface: var(--ds-gray-900);
+  --ds-color-surface-raised: var(--ds-gray-800);
+  --ds-color-surface-sunken: var(--ds-gray-950);
+  --ds-color-border: var(--ds-gray-700);
+  --ds-color-border-strong: var(--ds-gray-500);
+  --ds-color-text: var(--ds-gray-50);
+  --ds-color-text-muted: var(--ds-gray-400);
+  --ds-color-text-inverse: var(--ds-gray-900);
+  --ds-color-primary: var(--ds-blue-300);
+  --ds-color-primary-hover: var(--ds-blue-100);
+  --ds-color-primary-subtle: rgb(59 111 224 / 18%);
+  --ds-color-on-primary: var(--ds-gray-950);
+  --ds-color-danger: var(--ds-red-300);
+  --ds-color-success: var(--ds-green-300);
+  --ds-color-warning: var(--ds-amber-300);
+  --ds-color-focus: var(--ds-blue-300);
+  --ds-color-backdrop: rgb(0 0 0 / 60%);
+  --ds-canvas-bg: #1b1d22;
+  --ds-canvas-grid: rgb(255 255 255 / 5%);
+  --ds-canvas-grid-major: rgb(255 255 255 / 11%);
+  --ds-canvas-wall: #c8ccd4;
+  --ds-canvas-dimension: var(--ds-gray-200);
+  --ds-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --ds-shadow-md: 0 4px 12px rgb(0 0 0 / 45%);
+  --ds-shadow-lg: 0 16px 40px rgb(0 0 0 / 55%);
+}
+
+:root[data-theme='dark'] {
+  @include dark-theme;
+}

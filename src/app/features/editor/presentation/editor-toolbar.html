@@ -1,0 +1,224 @@
+<nav class="toolbar" [attr.aria-label]="i18n.t('editor.toolbar')">
+  <div class="group primary">
+    <a
+      dsButton
+      variant="ghost"
+      size="sm"
+      [iconOnly]="true"
+      routerLink="/"
+      [attr.aria-label]="i18n.t('editor.backToProjects')"
+      [dsTooltip]="i18n.t('editor.backToProjects')"
+    >
+      <ds-icon name="arrowLeft" />
+    </a>
+    <span class="name" [title]="store.project()?.name ?? ''">{{ store.project()?.name }}</span>
+    <span class="divider" aria-hidden="true"></span>
+    <button
+      dsButton
+      variant="ghost"
+      size="sm"
+      [iconOnly]="true"
+      [disabled]="!store.canUndo()"
+      (click)="store.undo()"
+      [attr.aria-label]="i18n.t('editor.undo')"
+      [dsTooltip]="i18n.t('editor.undo')"
+      data-testid="undo"
+    >
+      <ds-icon name="undo" />
+    </button>
+    <button
+      dsButton
+      variant="ghost"
+      size="sm"
+      [iconOnly]="true"
+      [disabled]="!store.canRedo()"
+      (click)="store.redo()"
+      [attr.aria-label]="i18n.t('editor.redo')"
+      [dsTooltip]="i18n.t('editor.redo')"
+      data-testid="redo"
+    >
+      <ds-icon name="redo" />
+    </button>
+    <span class="divider" aria-hidden="true"></span>
+    <button
+      dsButton
+      variant="ghost"
+      size="sm"
+      [iconOnly]="true"
+      (click)="addRoom.emit()"
+      [attr.aria-label]="i18n.t('editor.addRoom')"
+      [dsTooltip]="i18n.t('editor.addRoom')"
+      data-testid="add-room"
+    >
+      <ds-icon name="room" />
+    </button>
+    <button
+      dsButton
+      variant="ghost"
+      size="sm"
+      [iconOnly]="true"
+      [pressed]="state.tool() === 'draw-room'"
+      (click)="toggleDrawTool()"
+      [attr.aria-label]="i18n.t('editor.drawRoom')"
+      [dsTooltip]="i18n.t('editor.drawHint')"
+    >
+      <ds-icon name="draw" />
+    </button>
+    <button dsButton variant="primary" size="sm" class="view3d" (click)="state.show3d.set(true)" data-testid="open-3d">
+      <ds-icon name="cube" /> <span class="label">{{ i18n.t('editor.view3d') }}</span>
+    </button>
+    @if (breakpoints.isMobile()) {
+      <button
+        dsButton
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        [attr.aria-expanded]="expanded()"
+        aria-controls="toolbar-secondary"
+        (click)="expanded.set(!expanded())"
+        [attr.aria-label]="i18n.t('editor.toggleToolbar')"
+      >
+        <ds-icon [name]="expanded() ? 'close' : 'menu'" />
+      </button>
+    }
+  </div>
+
+  @if (showSecondary()) {
+    <div class="group secondary" id="toolbar-secondary">
+      <button
+        dsButton
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        (click)="state.zoomBy(1 / zoomStep)"
+        [attr.aria-label]="i18n.t('editor.zoomOut')"
+        [dsTooltip]="i18n.t('editor.zoomOut')"
+      >
+        <ds-icon name="zoomOut" />
+      </button>
+      <span class="zoom" aria-live="polite">{{ zoomPercent() }} %</span>
+      <button
+        dsButton
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        (click)="state.zoomBy(zoomStep)"
+        [attr.aria-label]="i18n.t('editor.zoomIn')"
+        [dsTooltip]="i18n.t('editor.zoomIn')"
+      >
+        <ds-icon name="zoomIn" />
+      </button>
+      <button
+        dsButton
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        (click)="state.fitToContent()"
+        [attr.aria-label]="i18n.t('editor.zoomFit')"
+        [dsTooltip]="i18n.t('editor.zoomFit')"
+      >
+        <ds-icon name="fit" />
+      </button>
+      <span class="divider" aria-hidden="true"></span>
+      <button
+        dsButton
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        [pressed]="store.settings()?.snapEnabled ?? false"
+        (click)="toggleSnap()"
+        [attr.aria-label]="i18n.t('editor.grid')"
+        [dsTooltip]="i18n.t('editor.grid')"
+      >
+        <ds-icon name="grid" />
+      </button>
+      <button
+        dsButton
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        [pressed]="store.settings()?.showDimensions ?? false"
+        (click)="toggleDimensions()"
+        [attr.aria-label]="i18n.t('editor.dimensions')"
+        [dsTooltip]="i18n.t('editor.dimensions')"
+      >
+        <ds-icon name="ruler" />
+      </button>
+      <ds-select
+        class="unit"
+        [label]="i18n.t('editor.unit')"
+        [hideLabel]="true"
+        [options]="unitOptions"
+        [value]="store.settings()?.unit ?? 'cm'"
+        (valueChange)="setUnit($event)"
+      />
+      <span class="divider" aria-hidden="true"></span>
+      <ds-select
+        class="floor"
+        [label]="i18n.t('editor.floor')"
+        [hideLabel]="true"
+        [options]="floorOptions()"
+        [value]="store.activeFloor()?.id ?? ''"
+        (valueChange)="selectFloor($event)"
+      />
+      <button
+        dsButton
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        (click)="useCases.addFloor()"
+        [attr.aria-label]="i18n.t('editor.addFloor')"
+        [dsTooltip]="i18n.t('editor.addFloor')"
+      >
+        <ds-icon name="layers" />
+      </button>
+      <button
+        dsButton
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        [disabled]="store.floors().length < 2"
+        (click)="useCases.removeActiveFloor()"
+        [attr.aria-label]="i18n.t('editor.removeFloor')"
+        [dsTooltip]="i18n.t('editor.removeFloor')"
+      >
+        <ds-icon name="trash" />
+      </button>
+      <span class="divider" aria-hidden="true"></span>
+      <button
+        dsButton
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        (click)="exportProject.emit()"
+        [attr.aria-label]="i18n.t('editor.export')"
+        [dsTooltip]="i18n.t('editor.export')"
+        data-testid="export"
+      >
+        <ds-icon name="download" />
+      </button>
+      <button
+        dsButton
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        (click)="fileInput.click()"
+        [attr.aria-label]="i18n.t('editor.import')"
+        [dsTooltip]="i18n.t('editor.import')"
+      >
+        <ds-icon name="upload" />
+      </button>
+      <input
+        #fileInput
+        class="ds-visually-hidden"
+        type="file"
+        accept="application/json,.json"
+        tabindex="-1"
+        [attr.aria-label]="i18n.t('editor.import')"
+        (change)="onFile(fileInput)"
+      />
+      <span class="spacer"></span>
+      <app-preferences />
+    </div>
+  }
+</nav>

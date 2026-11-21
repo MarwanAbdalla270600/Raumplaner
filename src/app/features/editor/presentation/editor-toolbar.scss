@@ -1,0 +1,93 @@
+@use '../../../design-system/tokens/breakpoints' as bp;
+
+:host {
+  display: block;
+  position: relative;
+  z-index: var(--ds-z-toolbar);
+  background: var(--ds-color-surface);
+  border-bottom: 1px solid var(--ds-color-border);
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  padding: var(--ds-space-1) var(--ds-space-2);
+
+  @include bp.tablet-up {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ds-space-1);
+  }
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-1);
+  min-width: 0;
+}
+
+.primary {
+  @include bp.mobile-only {
+    .name {
+      flex: 1;
+    }
+    .view3d .label {
+      display: none;
+    }
+  }
+}
+
+.secondary {
+  flex: 1;
+  flex-wrap: wrap;
+
+  @include bp.mobile-only {
+    padding: var(--ds-space-1) 0;
+    border-top: 1px solid var(--ds-color-border);
+  }
+}
+
+.name {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--ds-font-weight-bold);
+  padding: 0 var(--ds-space-2);
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 var(--ds-space-1);
+  background: var(--ds-color-border);
+}
+
+.zoom {
+  min-width: 48px;
+  text-align: center;
+  font-size: var(--ds-font-size-xs);
+  font-family: var(--ds-font-mono);
+}
+
+.unit {
+  width: 68px;
+}
+
+.floor {
+  width: 140px;
+}
+
+@media (pointer: fine) {
+  .unit,
+  .floor,
+  app-preferences {
+    --ds-control-height: var(--ds-control-height-sm);
+  }
+}
+
+.spacer {
+  flex: 1;
+}

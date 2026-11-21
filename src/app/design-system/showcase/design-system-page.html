@@ -1,0 +1,123 @@
+<header class="header">
+  <a dsButton variant="ghost" routerLink="/"><ds-icon name="arrowLeft" /> {{ i18n.t('common.back') }}</a>
+  <app-preferences />
+</header>
+<main id="main" class="main">
+  <h1>{{ i18n.t('ds.title') }}</h1>
+  <p class="muted">{{ i18n.t('ds.intro') }}</p>
+
+  <section>
+    <h2>Farben</h2>
+    <div class="swatches">
+      @for (c of colors; track c) {
+        <div class="swatch">
+          <span [style.background]="'var(--ds-color-' + c + ')'"></span><code>--ds-color-{{ c }}</code>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section>
+    <h2>Typografie</h2>
+    @for (size of fontSizes; track size) {
+      <p [style.font-size]="'var(--ds-font-size-' + size + ')'" class="type">--ds-font-size-{{ size }} · Raumplaner</p>
+    }
+  </section>
+
+  <section>
+    <h2>Abstände, Radien, Schatten</h2>
+    <div class="row">
+      @for (s of spaces; track s) {
+        <div class="space" [style.width]="'var(--ds-space-' + s + ')'" [title]="'--ds-space-' + s"></div>
+      }
+    </div>
+    <div class="row">
+      @for (r of radii; track r) {
+        <div class="box" [style.border-radius]="'var(--ds-radius-' + r + ')'">
+          <code>{{ r }}</code>
+        </div>
+      }
+      @for (s of shadows; track s) {
+        <div class="box" [style.box-shadow]="'var(--ds-shadow-' + s + ')'">
+          <code>shadow-{{ s }}</code>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section>
+    <h2>Button</h2>
+    <div class="row">
+      <button dsButton variant="primary">Primary</button>
+      <button dsButton>Secondary</button>
+      <button dsButton variant="ghost">Ghost</button>
+      <button dsButton variant="danger">Danger</button>
+      <button dsButton [disabled]="true">Disabled</button>
+      <button dsButton [pressed]="toggle()" (click)="toggle.set(!toggle())">Toggle</button>
+      <button dsButton [iconOnly]="true" aria-label="Rückgängig" dsTooltip="Tooltip: Rückgängig">
+        <ds-icon name="undo" />
+      </button>
+      <button dsButton size="sm">Small</button>
+    </div>
+  </section>
+
+  <section class="fields">
+    <h2>Formularfelder</h2>
+    <ds-text-field label="Input" [(value)]="text" />
+    <ds-number-field
+      label="NumberField mit Einheit"
+      [unit]="$any(unit())"
+      [value]="length()"
+      (valueChange)="length.set($event)"
+      [min]="1"
+    />
+    <ds-select
+      label="Select (Einheit)"
+      [options]="[
+        { value: 'cm', label: 'cm' },
+        { value: 'm', label: 'm' },
+      ]"
+      [(value)]="unit"
+    />
+    <ds-slider label="Slider" [min]="0" [max]="359" suffix="°" [(value)]="slider" />
+    <ds-color-field label="Farbe" [value]="color()" (valueChange)="color.set($event)" />
+    <ds-switch label="Switch" [(checked)]="toggle" />
+    <p class="muted">Wert intern: {{ length() }} cm</p>
+  </section>
+
+  <section>
+    <h2>Card, Tabs</h2>
+    <ds-card heading="Card">
+      <ds-tabs [tabs]="tabs" [(selected)]="tab" label="Beispiel-Tabs" idPrefix="demo" />
+      <div role="tabpanel" [id]="'demo-panel-' + tab()" [attr.aria-labelledby]="'demo-tab-' + tab()">
+        Inhalt von {{ tab() }}
+      </div>
+    </ds-card>
+  </section>
+
+  <section>
+    <h2>Dialog, Toast, Bottom Sheet</h2>
+    <div class="row">
+      <button dsButton (click)="dialogOpen.set(true)">Dialog öffnen</button>
+      <button dsButton (click)="toasts.show('Gespeichert', 'success')">Toast</button>
+      <button dsButton (click)="toasts.show('Fehler beim Import', 'error')">Fehler-Toast</button>
+      <button dsButton (click)="showSheet.set(!showSheet())">
+        Bottom Sheet {{ showSheet() ? 'ausblenden' : 'zeigen' }}
+      </button>
+    </div>
+  </section>
+</main>
+
+<ds-dialog heading="Dialog" [(open)]="dialogOpen">
+  <p>Nativer &lt;dialog&gt; mit Fokusfalle und Escape.</p>
+  <div dsDialogActions>
+    <button dsButton (click)="dialogOpen.set(false)">{{ i18n.t('common.cancel') }}</button>
+    <button dsButton variant="primary" (click)="dialogOpen.set(false)">OK</button>
+  </div>
+</ds-dialog>
+
+@if (showSheet()) {
+  <ds-bottom-sheet heading="Bottom Sheet" [(expanded)]="sheetOpen">
+    <p>Inhalt des Bottom Sheets. Antippen oder wischen.</p>
+  </ds-bottom-sheet>
+}

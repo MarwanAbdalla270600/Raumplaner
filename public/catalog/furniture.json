@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "items": [
+    { "id": "sofa-3", "name": { "de": "Sofa (3-Sitzer)", "en": "Sofa (3-seater)" }, "category": "seating", "width": 220, "depth": 95, "height": 85, "color": "#5b6c8f", "material": "Stoff", "weight": 70 },
+    { "id": "sofa-corner", "name": { "de": "Ecksofa", "en": "Corner sofa" }, "category": "seating", "width": 280, "depth": 180, "height": 85, "color": "#7a8a6a", "material": "Stoff", "weight": 110 },
+    { "id": "armchair", "name": { "de": "Sessel", "en": "Armchair" }, "category": "seating", "width": 85, "depth": 85, "height": 90, "color": "#b5654a", "material": "Stoff", "weight": 30 },
+    { "id": "chair", "name": { "de": "Stuhl", "en": "Chair" }, "category": "seating", "width": 45, "depth": 50, "height": 90, "color": "#8b6a4b", "material": "Holz", "weight": 6 },
+    { "id": "bed-double", "name": { "de": "Doppelbett 180×200", "en": "Double bed 180×200" }, "category": "bed", "width": 180, "depth": 210, "height": 50, "color": "#c9b79c", "material": "Holz", "weight": 80 },
+    { "id": "bed-single", "name": { "de": "Einzelbett 90×200", "en": "Single bed 90×200" }, "category": "bed", "width": 90, "depth": 205, "height": 45, "color": "#d8c7a8", "material": "Holz", "weight": 40 },
+    { "id": "nightstand", "name": { "de": "Nachttisch", "en": "Nightstand" }, "category": "bed", "width": 45, "depth": 40, "height": 50, "color": "#a0805e", "material": "Holz", "weight": 10 },
+    { "id": "wardrobe", "name": { "de": "Kleiderschrank", "en": "Wardrobe" }, "category": "storage", "width": 200, "depth": 60, "height": 220, "color": "#e7e1d6", "material": "Spanplatte", "weight": 120 },
+    { "id": "shelf", "name": { "de": "Regal", "en": "Shelf" }, "category": "storage", "width": 80, "depth": 35, "height": 200, "color": "#ffffff", "material": "Holz", "weight": 35 },
+    { "id": "sideboard", "name": { "de": "Sideboard", "en": "Sideboard" }, "category": "storage", "width": 180, "depth": 45, "height": 75, "color": "#6b5442", "material": "Holz", "weight": 50 },
+    { "id": "tv-bench", "name": { "de": "TV-Lowboard", "en": "TV bench" }, "category": "storage", "width": 160, "depth": 40, "height": 50, "color": "#3d3d3d", "material": "Holz", "weight": 30 },
+    { "id": "dining-table", "name": { "de": "Esstisch", "en": "Dining table" }, "category": "table", "width": 160, "depth": 90, "height": 75, "color": "#9c7a54", "material": "Eiche", "weight": 45 },
+    { "id": "coffee-table", "name": { "de": "Couchtisch", "en": "Coffee table" }, "category": "table", "width": 110, "depth": 60, "height": 45, "color": "#b08d64", "material": "Holz", "weight": 20 },
+    { "id": "round-table", "name": { "de": "Bistrotisch", "en": "Bistro table" }, "category": "table", "width": 70, "depth": 70, "height": 75, "color": "#d0d0d0", "material": "Metall", "weight": 12 },
+    { "id": "desk", "name": { "de": "Schreibtisch", "en": "Desk" }, "category": "office", "width": 140, "depth": 70, "height": 75, "color": "#f0ece4", "material": "Holz", "weight": 35 },
+    { "id": "office-chair", "name": { "de": "Bürostuhl", "en": "Office chair" }, "category": "office", "width": 65, "depth": 65, "height": 110, "color": "#2f2f2f", "material": "Kunststoff", "weight": 15 },
+    { "id": "kitchen-row", "name": { "de": "Küchenzeile", "en": "Kitchen unit" }, "category": "kitchen", "width": 270, "depth": 60, "height": 90, "color": "#f5f5f5", "material": "Schichtstoff", "weight": 200 },
+    { "id": "fridge", "name": { "de": "Kühlschrank", "en": "Fridge" }, "category": "kitchen", "width": 60, "depth": 65, "height": 185, "color": "#e0e3e6", "material": "Metall", "weight": 70 },
+    { "id": "kitchen-island", "name": { "de": "Kücheninsel", "en": "Kitchen island" }, "category": "kitchen", "width": 180, "depth": 90, "height": 90, "color": "#4f6d7a", "material": "Schichtstoff", "weight": 150 },
+    { "id": "bathtub", "name": { "de": "Badewanne", "en": "Bathtub" }, "category": "bathroom", "width": 170, "depth": 75, "height": 60, "color": "#fbfbfb", "material": "Acryl", "weight": 40 },
+    { "id": "shower", "name": { "de": "Dusche", "en": "Shower" }, "category": "bathroom", "width": 90, "depth": 90, "height": 200, "color": "#cfe3ea", "material": "Glas", "weight": 50 },
+    { "id": "sink", "name": { "de": "Waschbecken", "en": "Sink" }, "category": "bathroom", "width": 60, "depth": 45, "height": 85, "color": "#ffffff", "material": "Keramik", "weight": 20 },
+    { "id": "toilet", "name": { "de": "WC", "en": "Toilet" }, "category": "bathroom", "width": 40, "depth": 65, "height": 80, "color": "#ffffff", "material": "Keramik", "weight": 25 },
+    { "id": "plant", "name": { "de": "Zimmerpflanze", "en": "House plant" }, "category": "decor", "width": 45, "depth": 45, "height": 120, "color": "#4c8a4c", "material": null, "weight": 8 },
+    { "id": "rug", "name": { "de": "Teppich", "en": "Rug" }, "category": "decor", "width": 200, "depth": 140, "height": 1, "color": "#c4a484", "material": "Wolle", "weight": 6 },
+    { "id": "floor-lamp", "name": { "de": "Stehlampe", "en": "Floor lamp" }, "category": "decor", "width": 35, "depth": 35, "height": 165, "color": "#e8c66a", "material": "Metall", "weight": 5 },
+    { "id": "tv", "name": { "de": "Fernseher 55\"", "en": "TV 55\"" }, "category": "other", "width": 123, "depth": 8, "height": 71, "color": "#111111", "material": null, "weight": 15 }
+  ]
+}

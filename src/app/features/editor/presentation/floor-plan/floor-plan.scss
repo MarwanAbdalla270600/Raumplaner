@@ -1,0 +1,202 @@
+:host {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ds-canvas-bg);
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+
+  &.drawing {
+    cursor: crosshair;
+  }
+
+  &:focus-visible {
+    outline-offset: -3px;
+  }
+}
+
+.grid {
+  pointer-events: none;
+}
+
+.grid-line,
+.grid-line-major {
+  fill: none;
+  stroke-width: 1;
+}
+
+.grid-line {
+  stroke: var(--ds-canvas-grid);
+}
+
+.grid-line-major {
+  stroke: var(--ds-canvas-grid-major);
+}
+
+.room-floor {
+  stroke: none;
+}
+
+.room.selected .room-floor {
+  stroke: var(--ds-canvas-selection);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 6 4;
+}
+
+.wall {
+  fill: var(--ds-canvas-wall);
+  cursor: move;
+}
+
+.opening {
+  fill: var(--ds-canvas-bg);
+  pointer-events: none;
+
+  &.window {
+    fill: #bcdcf0;
+  }
+}
+
+.opening-symbol {
+  fill: none;
+  stroke: var(--ds-canvas-wall);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+
+  &.window {
+    stroke: #3b82b6;
+    stroke-width: 2;
+  }
+}
+
+.room-label,
+.dimension-label {
+  text-anchor: middle;
+  fill: var(--ds-canvas-dimension);
+  pointer-events: none;
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.room-area {
+  font-weight: var(--ds-font-weight-regular);
+  opacity: 0.75;
+}
+
+.item {
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.item-body {
+  stroke: rgb(0 0 0 / 45%);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.item-front {
+  stroke: rgb(0 0 0 / 35%);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.item-label {
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.item.selected .item-body {
+  stroke: var(--ds-canvas-selection);
+  stroke-width: 2.5;
+}
+
+.item.colliding .item-body {
+  stroke: var(--ds-canvas-collision);
+  stroke-width: 3;
+  stroke-dasharray: 6 3;
+}
+
+.guide {
+  stroke: var(--ds-canvas-guide);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 4 4;
+  pointer-events: none;
+}
+
+.clearance {
+  pointer-events: none;
+
+  line {
+    stroke: var(--ds-canvas-selection);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    marker-start: none;
+  }
+
+  text {
+    text-anchor: middle;
+    fill: var(--ds-canvas-selection);
+    font-weight: var(--ds-font-weight-bold);
+    paint-order: stroke;
+    stroke: var(--ds-canvas-bg);
+    stroke-width: 3px;
+  }
+}
+
+.handle-stem {
+  stroke: var(--ds-canvas-selection);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.handle {
+  fill: var(--ds-color-surface);
+  stroke: var(--ds-canvas-selection);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  cursor: grab;
+
+  &.resize {
+    cursor: nwse-resize;
+  }
+}
+
+.marquee,
+.draw-rect {
+  fill: color-mix(in srgb, var(--ds-canvas-selection) 12%, transparent);
+  stroke: var(--ds-canvas-selection);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.draw-rect {
+  stroke-dasharray: none;
+  stroke-width: 2;
+}
+
+/* Bigger touch targets for handles on coarse pointers. */
+@media (pointer: coarse) {
+  .handle {
+    stroke-width: 3;
+  }
+}

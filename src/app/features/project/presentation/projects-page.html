@@ -1,0 +1,118 @@
+<header class="header">
+  <div class="brand">
+    <ds-icon name="room" [size]="28" />
+    <span>{{ i18n.t('app.title') }}</span>
+  </div>
+  <app-preferences />
+</header>
+
+<main id="main" class="main">
+  <section class="intro">
+    <h1>{{ i18n.t('projects.title') }}</h1>
+    <p>{{ i18n.t('projects.subtitle') }}</p>
+    <div class="actions">
+      <button dsButton variant="primary" (click)="openCreate()" data-testid="new-project">
+        <ds-icon name="plus" /> {{ i18n.t('projects.new') }}
+      </button>
+      <button dsButton (click)="fileInput.click()"><ds-icon name="upload" /> {{ i18n.t('projects.import') }}</button>
+      <input
+        #fileInput
+        class="ds-visually-hidden"
+        type="file"
+        accept="application/json,.json"
+        tabindex="-1"
+        [attr.aria-label]="i18n.t('projects.import')"
+        (change)="importFile(fileInput)"
+      />
+      <a dsButton variant="ghost" routerLink="/design-system"
+        ><ds-icon name="palette" /> {{ i18n.t('projects.designSystem') }}</a
+      >
+    </div>
+  </section>
+
+  @if (library.projects().length === 0 && !library.loading()) {
+    <p class="empty">{{ i18n.t('projects.empty') }}</p>
+  }
+
+  <ul class="grid" role="list">
+    @for (project of library.projects(); track project.id) {
+      <li>
+        <ds-card [interactive]="true">
+          <a class="title" [routerLink]="['/project', project.id]">{{ project.name }}</a>
+          <p class="meta">
+            {{ i18n.t('projects.rooms', { count: project.roomCount }) }} ·
+            {{ i18n.t('projects.items', { count: project.furnitureCount }) }}
+            <br />
+            {{ i18n.t('projects.updated', { date: i18n.formatDate(project.updatedAt) }) }}
+          </p>
+          <div class="card-actions">
+            <a dsButton variant="primary" size="sm" [routerLink]="['/project', project.id]">{{
+              i18n.t('common.open')
+            }}</a>
+            <button
+              dsButton
+              variant="ghost"
+              size="sm"
+              [iconOnly]="true"
+              [attr.aria-label]="i18n.t('common.rename') + ': ' + project.name"
+              (click)="openRename(project)"
+            >
+              <ds-icon name="edit" />
+            </button>
+            <button
+              dsButton
+              variant="ghost"
+              size="sm"
+              [iconOnly]="true"
+              [attr.aria-label]="i18n.t('editor.export') + ': ' + project.name"
+              (click)="exportProject(project)"
+            >
+              <ds-icon name="download" />
+            </button>
+            <button
+              dsButton
+              variant="ghost"
+              size="sm"
+              [iconOnly]="true"
+              [attr.aria-label]="i18n.t('common.delete') + ': ' + project.name"
+              (click)="openDelete(project)"
+            >
+              <ds-icon name="trash" />
+            </button>
+          </div>
+        </ds-card>
+      </li>
+    }
+  </ul>
+</main>
+
+@let state = dialog();
+<ds-dialog
+  [open]="state !== null"
+  (openChange)="closeDialog($event)"
+  [heading]="
+    state?.kind === 'delete'
+      ? i18n.t('common.delete')
+      : state?.kind === 'rename'
+        ? i18n.t('common.rename')
+        : i18n.t('projects.new')
+  "
+>
+  @if (state?.kind === 'delete') {
+    <p>{{ i18n.t('projects.deleteConfirm', { name: deleteName() }) }}</p>
+  } @else if (state) {
+    <form id="project-name-form" (submit)="$event.preventDefault(); confirm()">
+      <ds-text-field [label]="i18n.t('common.name')" [(value)]="nameDraft" [required]="true" />
+    </form>
+  }
+  <div dsDialogActions>
+    <button dsButton (click)="dialog.set(null)">{{ i18n.t('common.cancel') }}</button>
+    @if (state?.kind === 'delete') {
+      <button dsButton variant="danger" (click)="confirm()">{{ i18n.t('common.delete') }}</button>
+    } @else {
+      <button dsButton variant="primary" type="submit" form="project-name-form" data-testid="confirm-dialog">
+        {{ state?.kind === 'rename' ? i18n.t('common.save') : i18n.t('common.create') }}
+      </button>
+    }
+  </div>
+</ds-dialog>

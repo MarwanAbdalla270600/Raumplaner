@@ -1,0 +1,206 @@
+<svg
+  #svg
+  class="canvas"
+  [class.drawing]="state.tool() === 'draw-room'"
+  role="application"
+  tabindex="0"
+  aria-roledescription="Grundriss"
+  [attr.aria-label]="i18n.t('editor.canvasLabel')"
+  data-testid="floor-plan"
+  (pointerdown)="onPointerDown($event)"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerCancel($event)"
+  (wheel)="onWheel($event)"
+  (dragover)="onDragOver($event)"
+  (drop)="onDrop($event)"
+  (contextmenu)="$event.preventDefault()"
+>
+  <defs>
+    <pattern
+      id="grid-minor"
+      patternUnits="userSpaceOnUse"
+      [attr.width]="grid().minor"
+      [attr.height]="grid().minor"
+      [attr.patternTransform]="grid().transform"
+    >
+      <path [attr.d]="'M ' + grid().minor + ' 0 L 0 0 0 ' + grid().minor" class="grid-line" />
+    </pattern>
+    <pattern
+      id="grid-major"
+      patternUnits="userSpaceOnUse"
+      [attr.width]="grid().major"
+      [attr.height]="grid().major"
+      [attr.patternTransform]="grid().transform"
+    >
+      <path [attr.d]="'M ' + grid().major + ' 0 L 0 0 0 ' + grid().major" class="grid-line-major" />
+    </pattern>
+  </defs>
+
+  @if (grid().showMinor) {
+    <rect class="grid" width="100%" height="100%" fill="url(#grid-minor)" />
+  }
+  <rect class="grid" width="100%" height="100%" fill="url(#grid-major)" />
+
+  <g [attr.transform]="worldTransform()">
+    <!-- Rooms -->
+    @for (entry of rooms(); track entry.room.id) {
+      <g class="room" [class.selected]="entry.room.id === selectedRoomId()">
+        <rect
+          class="room-floor"
+          data-part="floor"
+          [attr.data-room-id]="entry.room.id"
+          [attr.x]="entry.room.x"
+          [attr.y]="entry.room.y"
+          [attr.width]="entry.room.width"
+          [attr.height]="entry.room.depth"
+          [attr.fill]="entry.room.floorColor"
+        />
+        @for (wall of entry.walls; track $index) {
+          <rect
+            class="wall"
+            data-part="wall"
+            [attr.data-room-id]="entry.room.id"
+            [attr.x]="wall.minX"
+            [attr.y]="wall.minY"
+            [attr.width]="boxWidth(wall)"
+            [attr.height]="boxHeight(wall)"
+          />
+        }
+        @for (o of entry.openings; track o.opening.id) {
+          <rect
+            class="opening"
+            [class.window]="o.opening.kind === 'window'"
+            [attr.x]="o.rect.minX"
+            [attr.y]="o.rect.minY"
+            [attr.width]="boxWidth(o.rect)"
+            [attr.height]="boxHeight(o.rect)"
+          />
+          <path class="opening-symbol" [class.window]="o.opening.kind === 'window'" [attr.d]="o.symbol" />
+        }
+        <text
+          class="room-label"
+          [attr.x]="entry.center.x"
+          [attr.y]="entry.center.y"
+          [attr.font-size]="roomLabelFont()"
+          [attr.fill]="entry.labelColor"
+        >
+          <tspan [attr.x]="entry.center.x" dy="-0.2em">{{ entry.room.name }}</tspan>
+          <tspan [attr.x]="entry.center.x" dy="1.3em" class="room-area">{{ entry.area }}</tspan>
+        </text>
+        @if (settings()?.showDimensions) {
+          <text
+            class="dimension-label"
+            [attr.x]="entry.center.x"
+            [attr.y]="entry.inner.minY - entry.room.wallThickness - 6 * px()"
+            [attr.font-size]="labelFont()"
+          >
+            {{ entry.widthLabel }}
+          </text>
+          <text
+            class="dimension-label"
+            [attr.font-size]="labelFont()"
+            [attr.transform]="
+              'translate(' +
+              (entry.inner.minX - entry.room.wallThickness - 6 * px()) +
+              ' ' +
+              entry.center.y +
+              ') rotate(-90)'
+            "
+          >
+            {{ entry.depthLabel }}
+          </text>
+        }
+      </g>
+    }
+
+    <!-- Furniture -->
+    @for (f of furniture(); track f.item.id) {
+      <g
+        class="item"
+        [class.selected]="f.selected"
+        [class.colliding]="f.colliding"
+        [attr.data-item-id]="f.item.id"
+        [attr.transform]="f.transform"
+      >
+        <title>{{ f.item.name }}{{ f.colliding ? ' – ' + i18n.t('editor.collisionItem') : '' }}</title>
+        <rect
+          class="item-body"
+          [attr.x]="-f.item.width / 2"
+          [attr.y]="-f.item.depth / 2"
+          [attr.width]="f.item.width"
+          [attr.height]="f.item.depth"
+          [attr.fill]="f.item.color"
+        />
+        <line
+          class="item-front"
+          [attr.x1]="-f.item.width / 2"
+          [attr.x2]="f.item.width / 2"
+          [attr.y1]="f.item.depth / 2"
+          [attr.y2]="f.item.depth / 2"
+        />
+        @if (f.showLabel) {
+          <text class="item-label" [attr.fill]="f.labelColor" [attr.font-size]="labelFont()">{{ f.item.name }}</text>
+        }
+      </g>
+    }
+
+    <!-- Snap guides -->
+    @if (state.preview(); as preview) {
+      @if (preview.guideX !== null) {
+        <line class="guide" [attr.x1]="preview.guideX" [attr.x2]="preview.guideX" y1="-100000" y2="100000" />
+      }
+      @if (preview.guideY !== null) {
+        <line class="guide" [attr.y1]="preview.guideY" [attr.y2]="preview.guideY" x1="-100000" x2="100000" />
+      }
+    }
+
+    <!-- Clearances to walls and furniture -->
+    @for (c of clearances(); track c.direction) {
+      <g class="clearance">
+        <line [attr.x1]="c.from.x" [attr.y1]="c.from.y" [attr.x2]="c.to.x" [attr.y2]="c.to.y" />
+        <text [attr.x]="c.labelX" [attr.y]="c.labelY" [attr.font-size]="labelFont()" dy="-0.4em">{{ c.label }}</text>
+      </g>
+    }
+
+    <!-- Transform handles -->
+    @if (handles(); as h) {
+      <g class="handles" [attr.transform]="h.transform">
+        <line class="handle-stem" x1="0" [attr.y1]="h.topY" x2="0" [attr.y2]="h.rotateY" />
+        <circle class="handle" data-handle="rotate" cx="0" [attr.cy]="h.rotateY" [attr.r]="h.size / 1.6">
+          <title>{{ i18n.t('props.rotation') }}</title>
+        </circle>
+        <rect
+          class="handle resize"
+          data-handle="resize"
+          [attr.x]="h.resizeX - h.size / 2"
+          [attr.y]="h.resizeY - h.size / 2"
+          [attr.width]="h.size"
+          [attr.height]="h.size"
+        >
+          <title>{{ i18n.t('props.size') }}</title>
+        </rect>
+      </g>
+    }
+
+    @if (marquee(); as m) {
+      <rect
+        class="marquee"
+        [attr.x]="m.minX"
+        [attr.y]="m.minY"
+        [attr.width]="boxWidth(m)"
+        [attr.height]="boxHeight(m)"
+      />
+    }
+    @if (drawRect(); as d) {
+      <rect
+        class="draw-rect"
+        [attr.x]="d.minX"
+        [attr.y]="d.minY"
+        [attr.width]="boxWidth(d)"
+        [attr.height]="boxHeight(d)"
+      />
+    }
+  </g>
+</svg>
+<p class="ds-visually-hidden" aria-live="polite">{{ selectionAnnouncement() }}</p>

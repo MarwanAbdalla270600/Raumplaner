@@ -1,0 +1,84 @@
+<app-editor-toolbar
+  (addRoom)="addRoomOpen.set(true)"
+  (exportProject)="exportProject()"
+  (importProject)="importProject($event)"
+/>
+
+<div class="workspace" [class.mobile]="breakpoints.isMobile()" [class.desktop]="breakpoints.isDesktop()">
+  @if (breakpoints.isDesktop()) {
+    <aside class="panel left" [attr.aria-label]="i18n.t('editor.catalog')">
+      <h2>{{ i18n.t('editor.catalog') }}</h2>
+      <app-catalog-panel (place)="placeFromCatalog($event)" (created)="createCustom($event)" />
+    </aside>
+  }
+
+  <main id="main" class="stage">
+    @if (loaded()) {
+      <app-floor-plan />
+    }
+    <div class="status" aria-live="polite">
+      @if (collisionCount() > 0) {
+        <span class="collisions" data-testid="collision-count"
+          ><ds-icon name="warning" [size]="16" />
+          {{ i18n.t('editor.collisionWarning', { count: collisionCount() }) }}</span
+        >
+      }
+      @if (state.tool() === 'draw-room') {
+        <span>{{ i18n.t('editor.drawHint') }}</span>
+      }
+      <span class="save">{{ saveLabel() }}</span>
+    </div>
+  </main>
+
+  @if (breakpoints.isDesktop()) {
+    <aside class="panel right" [attr.aria-label]="i18n.t('editor.properties')">
+      <h2>{{ i18n.t('editor.properties') }}</h2>
+      <app-properties-panel />
+    </aside>
+  } @else if (!breakpoints.isMobile()) {
+    <aside class="panel right" [attr.aria-label]="i18n.t('editor.panels')">
+      <ng-container [ngTemplateOutlet]="tabbedPanels" />
+    </aside>
+  }
+</div>
+
+@if (breakpoints.isMobile()) {
+  <ds-bottom-sheet
+    [heading]="panelTab() === 'catalog' ? i18n.t('editor.catalog') : i18n.t('editor.properties')"
+    [(expanded)]="sheetExpanded"
+  >
+    <ng-container [ngTemplateOutlet]="tabbedPanels" />
+  </ds-bottom-sheet>
+}
+
+<ng-template #tabbedPanels>
+  <ds-tabs
+    [tabs]="tabs()"
+    [selected]="panelTab()"
+    (selectedChange)="selectTab($event)"
+    [label]="i18n.t('props.tabs')"
+    idPrefix="editor-panels"
+  />
+  <div
+    class="tab-panel"
+    role="tabpanel"
+    [id]="'editor-panels-panel-' + panelTab()"
+    [attr.aria-labelledby]="'editor-panels-tab-' + panelTab()"
+  >
+    @if (panelTab() === 'catalog') {
+      <app-catalog-panel (place)="placeFromCatalog($event)" (created)="createCustom($event)" />
+    } @else {
+      <app-properties-panel />
+    }
+  </div>
+</ng-template>
+
+<app-add-room-dialog [(open)]="addRoomOpen" (created)="addRoom($event)" />
+
+@if (state.show3d()) {
+  @defer (on immediate) {
+    <app-viewer-3d (closed)="state.show3d.set(false)" />
+  } @loading (minimum 200ms) {
+    <div class="viewer-loading" role="status">{{ i18n.t('viewer.loading') }}</div>
+  }
+}

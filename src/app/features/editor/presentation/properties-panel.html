@@ -1,0 +1,383 @@
+@if (item(); as item) {
+  <section class="section" [attr.aria-label]="i18n.t('editor.properties')">
+    <ds-text-field [label]="i18n.t('common.name')" [value]="item.name" (committed)="updateItems({ name: $event })" />
+    @if (isColliding()) {
+      <p class="warning" role="status"><ds-icon name="warning" [size]="18" /> {{ i18n.t('editor.collisionItem') }}</p>
+    }
+    <div class="actions">
+      <button
+        dsButton
+        variant="ghost"
+        [iconOnly]="true"
+        (click)="useCases.rotateSelection(-rotationStep)"
+        [attr.aria-label]="i18n.t('props.rotateLeft')"
+        [dsTooltip]="i18n.t('props.rotateLeft')"
+      >
+        <ds-icon name="rotateLeft" />
+      </button>
+      <button
+        dsButton
+        variant="ghost"
+        [iconOnly]="true"
+        (click)="useCases.rotateSelection(rotationStep)"
+        [attr.aria-label]="i18n.t('props.rotateRight')"
+        [dsTooltip]="i18n.t('props.rotateRight')"
+        data-testid="rotate-right"
+      >
+        <ds-icon name="rotateRight" />
+      </button>
+      <button
+        dsButton
+        variant="ghost"
+        [iconOnly]="true"
+        (click)="useCases.duplicateSelection()"
+        [attr.aria-label]="i18n.t('props.duplicate')"
+        [dsTooltip]="i18n.t('props.duplicate')"
+      >
+        <ds-icon name="copy" />
+      </button>
+      <button
+        dsButton
+        variant="ghost"
+        [iconOnly]="true"
+        (click)="useCases.bringForward()"
+        [attr.aria-label]="i18n.t('props.bringForward')"
+        [dsTooltip]="i18n.t('props.bringForward')"
+      >
+        <ds-icon name="layerUp" />
+      </button>
+      <button
+        dsButton
+        variant="ghost"
+        [iconOnly]="true"
+        (click)="useCases.sendBackward()"
+        [attr.aria-label]="i18n.t('props.sendBackward')"
+        [dsTooltip]="i18n.t('props.sendBackward')"
+      >
+        <ds-icon name="layerDown" />
+      </button>
+      <button
+        dsButton
+        variant="danger"
+        [iconOnly]="true"
+        (click)="useCases.deleteSelection()"
+        [attr.aria-label]="i18n.t('props.delete')"
+        [dsTooltip]="i18n.t('props.delete')"
+        data-testid="delete-selection"
+      >
+        <ds-icon name="trash" />
+      </button>
+    </div>
+
+    <h3>{{ i18n.t('props.position') }}</h3>
+    <div class="grid">
+      <ds-number-field
+        [label]="i18n.t('props.x')"
+        [unit]="unit()"
+        [value]="item.x"
+        (valueChange)="updateItems({ x: $event })"
+        data-testid="prop-x"
+      />
+      <ds-number-field
+        [label]="i18n.t('props.y')"
+        [unit]="unit()"
+        [value]="item.y"
+        (valueChange)="updateItems({ y: $event })"
+      />
+      <ds-number-field
+        [label]="i18n.t('props.elevation')"
+        [unit]="unit()"
+        [min]="0"
+        [value]="item.elevation"
+        (valueChange)="updateItems({ elevation: $event })"
+      />
+      <ds-number-field
+        [label]="i18n.t('props.layer')"
+        [step]="1"
+        [value]="item.layer"
+        (valueChange)="updateItems({ layer: $event })"
+      />
+    </div>
+    <ds-slider
+      [label]="i18n.t('props.rotation')"
+      [min]="0"
+      [max]="fullTurn - 1"
+      [step]="1"
+      suffix="°"
+      [value]="item.rotation"
+      (committed)="setRotation($event)"
+    />
+
+    <h3>{{ i18n.t('props.size') }}</h3>
+    <div class="grid three">
+      <ds-number-field
+        [label]="i18n.t('props.width')"
+        [unit]="unit()"
+        [min]="limits.minLength"
+        [max]="limits.maxLength"
+        [value]="item.width"
+        (valueChange)="updateItems({ width: $event })"
+        data-testid="prop-width"
+      />
+      <ds-number-field
+        [label]="i18n.t('props.depth')"
+        [unit]="unit()"
+        [min]="limits.minLength"
+        [max]="limits.maxLength"
+        [value]="item.depth"
+        (valueChange)="updateItems({ depth: $event })"
+      />
+      <ds-number-field
+        [label]="i18n.t('props.height')"
+        [unit]="unit()"
+        [min]="limits.minLength"
+        [max]="limits.maxLength"
+        [value]="item.height"
+        (valueChange)="updateItems({ height: $event })"
+      />
+    </div>
+
+    <div class="grid">
+      <ds-color-field
+        [label]="i18n.t('props.color')"
+        [value]="item.color"
+        (valueChange)="updateItems({ color: $event })"
+      />
+      <ds-select
+        [label]="i18n.t('props.category')"
+        [options]="categoryOptions()"
+        [value]="item.category"
+        (valueChange)="updateItems({ category: $any($event) })"
+      />
+      <ds-text-field
+        [label]="i18n.t('props.material')"
+        [value]="item.material ?? ''"
+        (committed)="updateItems({ material: $event || null })"
+      />
+      <ds-number-field
+        [label]="i18n.t('props.weight')"
+        unit="kg"
+        [min]="0"
+        [value]="item.weight"
+        (valueChange)="updateItems({ weight: $event })"
+      />
+    </div>
+  </section>
+} @else if (items().length > 1) {
+  <section class="section">
+    <p>{{ i18n.t('props.multi', { count: items().length }) }}</p>
+    <div class="actions">
+      <button
+        dsButton
+        variant="ghost"
+        [iconOnly]="true"
+        (click)="useCases.rotateSelection(-rotationStep)"
+        [attr.aria-label]="i18n.t('props.rotateLeft')"
+      >
+        <ds-icon name="rotateLeft" />
+      </button>
+      <button
+        dsButton
+        variant="ghost"
+        [iconOnly]="true"
+        (click)="useCases.rotateSelection(rotationStep)"
+        [attr.aria-label]="i18n.t('props.rotateRight')"
+      >
+        <ds-icon name="rotateRight" />
+      </button>
+      <button
+        dsButton
+        variant="ghost"
+        [iconOnly]="true"
+        (click)="useCases.duplicateSelection()"
+        [attr.aria-label]="i18n.t('props.duplicate')"
+      >
+        <ds-icon name="copy" />
+      </button>
+      <button
+        dsButton
+        variant="danger"
+        [iconOnly]="true"
+        (click)="useCases.deleteSelection()"
+        [attr.aria-label]="i18n.t('props.delete')"
+      >
+        <ds-icon name="trash" />
+      </button>
+    </div>
+    <ds-color-field
+      [label]="i18n.t('props.color')"
+      [value]="items()[0].color"
+      (valueChange)="updateItems({ color: $event })"
+    />
+    <ds-number-field
+      [label]="i18n.t('props.elevation')"
+      [unit]="unit()"
+      [min]="0"
+      [value]="items()[0].elevation"
+      (valueChange)="updateItems({ elevation: $event })"
+    />
+  </section>
+} @else if (room(); as room) {
+  <section class="section">
+    <ds-text-field [label]="i18n.t('common.name')" [value]="room.name" (committed)="updateRoom({ name: $event })" />
+    <h3>{{ i18n.t('props.size') }}</h3>
+    <div class="grid three">
+      <ds-number-field
+        [label]="i18n.t('props.width')"
+        [unit]="unit()"
+        [min]="limits.minRoomLength"
+        [value]="room.width"
+        (valueChange)="updateRoom({ width: $event })"
+        data-testid="room-width"
+      />
+      <ds-number-field
+        [label]="i18n.t('props.depth')"
+        [unit]="unit()"
+        [min]="limits.minRoomLength"
+        [value]="room.depth"
+        (valueChange)="updateRoom({ depth: $event })"
+      />
+      <ds-number-field
+        [label]="i18n.t('props.height')"
+        [unit]="unit()"
+        [min]="limits.minRoomLength"
+        [value]="room.height"
+        (valueChange)="updateRoom({ height: $event })"
+      />
+    </div>
+    <h3>{{ i18n.t('props.position') }}</h3>
+    <div class="grid three">
+      <ds-number-field
+        [label]="i18n.t('props.x')"
+        [unit]="unit()"
+        [value]="room.x"
+        (valueChange)="updateRoom({ x: $event })"
+      />
+      <ds-number-field
+        [label]="i18n.t('props.y')"
+        [unit]="unit()"
+        [value]="room.y"
+        (valueChange)="updateRoom({ y: $event })"
+      />
+      <ds-number-field
+        [label]="i18n.t('props.wallThickness')"
+        [unit]="unit()"
+        [min]="0"
+        [max]="limits.maxWallThickness"
+        [value]="room.wallThickness"
+        (valueChange)="updateRoom({ wallThickness: $event })"
+      />
+    </div>
+    <div class="grid">
+      <ds-color-field
+        [label]="i18n.t('props.floorColor')"
+        [value]="room.floorColor"
+        (valueChange)="updateRoom({ floorColor: $event })"
+      />
+      <ds-color-field
+        [label]="i18n.t('props.wallColor')"
+        [value]="room.wallColor"
+        (valueChange)="updateRoom({ wallColor: $event })"
+      />
+    </div>
+
+    <div class="heading-row">
+      <h3>{{ i18n.t('props.openings') }}</h3>
+      <div class="actions">
+        <button dsButton size="sm" (click)="useCases.addOpening(room.id, 'door')" data-testid="add-door">
+          <ds-icon name="door" [size]="16" /> {{ i18n.t('props.addDoor') }}
+        </button>
+        <button dsButton size="sm" (click)="useCases.addOpening(room.id, 'window', 'north')">
+          <ds-icon name="window" [size]="16" /> {{ i18n.t('props.addWindow') }}
+        </button>
+      </div>
+    </div>
+    @for (opening of room.openings; track opening.id; let i = $index) {
+      <fieldset class="opening">
+        <legend>{{ openingLabel(opening, i) }}</legend>
+        <div class="grid">
+          <ds-select
+            [label]="i18n.t('props.wall')"
+            [options]="wallOptions()"
+            [value]="opening.wall"
+            (valueChange)="updateOpening(opening, { wall: $any($event) })"
+          />
+          <ds-number-field
+            [label]="i18n.t('props.offset')"
+            [unit]="unit()"
+            [min]="0"
+            [max]="maxOffset(opening)"
+            [value]="opening.offset"
+            (valueChange)="updateOpening(opening, { offset: $event })"
+          />
+          <ds-number-field
+            [label]="i18n.t('props.width')"
+            [unit]="unit()"
+            [min]="limits.minLength"
+            [value]="opening.width"
+            (valueChange)="updateOpening(opening, { width: $event })"
+          />
+          <ds-number-field
+            [label]="i18n.t('props.height')"
+            [unit]="unit()"
+            [min]="limits.minLength"
+            [value]="opening.height"
+            (valueChange)="updateOpening(opening, { height: $event })"
+          />
+          <ds-number-field
+            [label]="i18n.t('props.sillHeight')"
+            [unit]="unit()"
+            [min]="0"
+            [value]="opening.sillHeight"
+            (valueChange)="updateOpening(opening, { sillHeight: $event })"
+          />
+          <button
+            dsButton
+            variant="danger"
+            size="sm"
+            class="remove"
+            (click)="useCases.removeOpening(room.id, opening.id)"
+          >
+            <ds-icon name="trash" [size]="16" /> {{ i18n.t('common.delete') }}
+          </button>
+        </div>
+      </fieldset>
+    } @empty {
+      <p class="muted">{{ i18n.t('props.noOpenings') }}</p>
+    }
+    <button dsButton variant="danger" (click)="useCases.deleteSelection()">
+      <ds-icon name="trash" /> {{ i18n.t('props.deleteRoom') }}
+    </button>
+  </section>
+} @else {
+  <section class="section">
+    <p class="muted">{{ i18n.t('props.empty') }}</p>
+    <h3>{{ i18n.t('props.project') }}</h3>
+    <ds-text-field
+      [label]="i18n.t('editor.projectName')"
+      [value]="store.project()?.name ?? ''"
+      (committed)="store.rename($event)"
+    />
+    <ds-text-field
+      [label]="i18n.t('editor.floor')"
+      [value]="store.activeFloor()?.name ?? ''"
+      (committed)="useCases.renameActiveFloor($event)"
+    />
+    <ds-select
+      [label]="i18n.t('props.gridSize')"
+      [options]="gridOptions"
+      [value]="'' + (store.settings()?.gridSize ?? 10)"
+      (valueChange)="setGrid($event)"
+    />
+    <ds-switch
+      [label]="i18n.t('editor.grid')"
+      [checked]="store.settings()?.snapEnabled ?? true"
+      (checkedChange)="store.updateSettings({ snapEnabled: $event })"
+    />
+    <ds-switch
+      [label]="i18n.t('editor.dimensions')"
+      [checked]="store.settings()?.showDimensions ?? true"
+      (checkedChange)="store.updateSettings({ showDimensions: $event })"
+    />
+  </section>
+}

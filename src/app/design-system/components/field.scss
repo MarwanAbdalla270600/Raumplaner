@@ -1,0 +1,60 @@
+/* Shared field styles used by text, number, select and colour fields. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+  min-width: 0;
+}
+
+.ds-field__label {
+  font-size: var(--ds-font-size-xs);
+  font-weight: var(--ds-font-weight-medium);
+  color: var(--ds-color-text-muted);
+}
+
+.ds-field__control {
+  display: flex;
+  align-items: center;
+  min-height: var(--ds-touch-target);
+  border: 1px solid var(--ds-color-border-strong);
+  border-radius: var(--ds-radius-md);
+  background: var(--ds-color-surface);
+  color: var(--ds-color-text);
+
+  &:focus-within {
+    outline: 3px solid var(--ds-color-focus);
+    outline-offset: 1px;
+  }
+
+  input,
+  select {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    min-height: calc(var(--ds-touch-target) - 2px);
+    padding: 0 var(--ds-space-3);
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: var(--ds-font-size-sm);
+
+    &:focus {
+      outline: none;
+    }
+  }
+}
+
+.ds-field__suffix {
+  padding-right: var(--ds-space-3);
+  font-size: var(--ds-font-size-xs);
+  color: var(--ds-color-text-muted);
+}
+
+@media (pointer: fine) {
+  .ds-field__control,
+  .ds-field__control input,
+  .ds-field__control select {
+    min-height: calc(var(--ds-control-height) - 2px);
+  }
+}

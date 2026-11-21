@@ -1,0 +1,84 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-font-size-md);
+  line-height: var(--ds-line-height-normal);
+  color: var(--ds-color-text);
+  background: var(--ds-color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: var(--ds-line-height-tight);
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--ds-color-focus);
+  outline-offset: 2px;
+}
+
+.ds-visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ds-skip-link {
+  position: absolute;
+  left: var(--ds-space-2);
+  top: -100px;
+  z-index: var(--ds-z-tooltip);
+  padding: var(--ds-space-2) var(--ds-space-4);
+  background: var(--ds-color-surface);
+  color: var(--ds-color-text);
+  border-radius: var(--ds-radius-md);
+
+  &:focus {
+    top: var(--ds-space-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Tooltip is appended to <body>, therefore styled globally. */
+.ds-tooltip {
+  position: fixed;
+  z-index: var(--ds-z-tooltip);
+  max-width: 260px;
+  padding: var(--ds-space-1) var(--ds-space-2);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-gray-800);
+  color: var(--ds-gray-50);
+  font-size: var(--ds-font-size-xs);
+  line-height: var(--ds-line-height-normal);
+  pointer-events: none;
+  box-shadow: var(--ds-shadow-md);
+}
