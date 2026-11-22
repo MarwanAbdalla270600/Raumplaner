@@ -35,6 +35,7 @@ const ICONS = {
   layerUp: 'm12 3 9 5-9 5-9-5zM3 13l9 5 9-5',
   layerDown: 'm3 11 9 5 9-5M12 3l9 5-9 5-9-5z',
   door: 'M6 21V3h12v18M3 21h18M14 12h1',
+  passage: 'M6 21V3h12v18M3 21h3M18 21h3',
   window: 'M4 4h16v16H4zM12 4v16M4 12h16',
   edit: 'M4 20h4L19 9l-4-4L4 16z',
   search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4',

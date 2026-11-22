@@ -132,7 +132,7 @@ export class PropertiesPanelComponent {
   }
 
   protected openingLabel(opening: Opening, index: number): string {
-    return `${this.i18n.t(opening.kind === 'door' ? 'opening.door' : 'opening.window')} ${index + 1}`;
+    return `${this.i18n.t(`opening.${opening.kind}`)} ${index + 1}`;
   }
 
   protected setGrid(value: string): void {

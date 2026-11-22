@@ -9,6 +9,7 @@ export const ROOM_DEFAULTS = {
 } as const;
 
 export const DOOR_DEFAULTS = { width: 90, height: 205, sillHeight: 0 } as const;
+export const PASSAGE_DEFAULTS = { width: 100, height: 205, sillHeight: 0 } as const;
 export const WINDOW_DEFAULTS = { width: 120, height: 130, sillHeight: 90 } as const;
 
 export const SETTINGS_DEFAULTS = {

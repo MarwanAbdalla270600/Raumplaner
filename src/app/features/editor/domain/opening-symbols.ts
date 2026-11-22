@@ -22,3 +22,15 @@ export function windowSymbolPath(room: Room, opening: Opening): string {
   const end = addVec(start, edge.direction, opening.width);
   return `M ${point(start)} L ${point(end)}`;
 }
+
+/** Plan symbol of an opening; passages have none – they are just a gap in the wall. */
+export function openingSymbolPath(room: Room, opening: Opening): string {
+  switch (opening.kind) {
+    case 'door':
+      return doorSymbolPath(room, opening);
+    case 'window':
+      return windowSymbolPath(room, opening);
+    case 'passage':
+      return '';
+  }
+}

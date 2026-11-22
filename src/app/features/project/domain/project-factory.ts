@@ -1,5 +1,5 @@
 import { createId, EntityId } from '../../../core/domain/id';
-import { DOOR_DEFAULTS, ROOM_DEFAULTS, SETTINGS_DEFAULTS, WINDOW_DEFAULTS } from './defaults';
+import { DOOR_DEFAULTS, PASSAGE_DEFAULTS, ROOM_DEFAULTS, SETTINGS_DEFAULTS, WINDOW_DEFAULTS } from './defaults';
 import {
   CURRENT_SCHEMA_VERSION,
   CustomFurnitureDefinition,
@@ -48,7 +48,7 @@ export function createRoom(input: RoomInput): Room {
 }
 
 export function createOpening(kind: OpeningKind, wall: WallIndex, offset: number): Opening {
-  const defaults = kind === 'door' ? DOOR_DEFAULTS : WINDOW_DEFAULTS;
+  const defaults = { door: DOOR_DEFAULTS, passage: PASSAGE_DEFAULTS, window: WINDOW_DEFAULTS }[kind];
   return { id: createId(kind), kind, wall, offset, ...defaults };
 }
 

@@ -99,7 +99,7 @@ const outline: Check = (value, path, errors) => {
 
 const openingCheck = object({
   id: string,
-  kind: oneOf(['door', 'window']),
+  kind: oneOf(['door', 'window', 'passage']),
   wall: wallIndex,
   offset: nonNegativeNumber,
   width: positiveNumber,

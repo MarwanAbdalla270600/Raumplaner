@@ -343,6 +343,9 @@
         <button dsButton size="sm" (click)="useCases.addOpening(room.id, 'window')">
           <ds-icon name="window" [size]="16" /> {{ i18n.t('props.addWindow') }}
         </button>
+        <button dsButton size="sm" (click)="useCases.addOpening(room.id, 'passage')" data-testid="add-passage">
+          <ds-icon name="passage" [size]="16" /> {{ i18n.t('props.addPassage') }}
+        </button>
       </div>
     </div>
     @for (opening of room.openings; track opening.id; let i = $index) {

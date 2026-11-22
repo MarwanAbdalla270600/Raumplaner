@@ -44,7 +44,7 @@ import { THIN_WALL_CM } from '../../../project/domain/defaults';
 import { EditorState } from '../../application/editor-state';
 import { EditorUseCases } from '../../application/editor-use-cases';
 import { computeClearances } from '../../domain/measurements';
-import { doorSymbolPath, windowSymbolPath } from '../../domain/opening-symbols';
+import { openingSymbolPath } from '../../domain/opening-symbols';
 import { furnitureInMarquee, toggleSelection } from '../../domain/selection';
 import { SNAP_THRESHOLD_PX, snapToGrid } from '../../domain/snapping';
 import { FREE_ROTATION_SNAP_DEGREES, resizeFromCorner, rotationTowards } from '../../domain/transform';
@@ -188,7 +188,7 @@ export class FloorPlanComponent {
       openings: room.openings.map((opening) => ({
         opening,
         outline: toPoints(openingPolygon(room, opening)),
-        symbol: opening.kind === 'door' ? doorSymbolPath(room, opening) : windowSymbolPath(room, opening),
+        symbol: openingSymbolPath(room, opening),
       })),
       center: roomCenter(room),
       labelColor: contrastingTextColor(room.floorColor),

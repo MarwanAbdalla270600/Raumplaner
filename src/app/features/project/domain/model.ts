@@ -7,7 +7,8 @@ export const CURRENT_SCHEMA_VERSION = 2;
 /** Index of a wall: wall i runs from `points[i]` to `points[i + 1]` of its room. */
 export type WallIndex = number;
 
-export type OpeningKind = 'door' | 'window';
+/** `passage` is a doorway without a door leaf – an open gap in the wall. */
+export type OpeningKind = 'door' | 'window' | 'passage';
 
 export type FurnitureCategory =
   'seating' | 'bed' | 'storage' | 'table' | 'kitchen' | 'bathroom' | 'office' | 'decor' | 'other';
@@ -32,7 +33,7 @@ export interface Opening {
   readonly offset: number;
   readonly width: number;
   readonly height: number;
-  /** Height above the floor where the opening starts (0 for doors). */
+  /** Height above the floor where the opening starts (0 for doors and passages). */
   readonly sillHeight: number;
 }
 
