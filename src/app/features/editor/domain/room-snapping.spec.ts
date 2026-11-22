@@ -40,4 +40,11 @@ describe('room snapping', () => {
     const context = { others: [], neighbours: [vec(100, 100)], threshold: 10, gridSize: null };
     expect(snapVertex(vec(305, 104), context).point).toEqual({ x: 305, y: 100 });
   });
+
+  it('glues rooms without wall thickness edge to edge', () => {
+    const a = room({ id: 'a', x: 0, y: 0, width: 400, depth: 300, wallThickness: 0 });
+    const b = room({ id: 'b', x: 0, y: 0, width: 300, depth: 300, wallThickness: 0 });
+    const result = snapRoomTranslation(b, vec(405, 3), [a], 10, 10);
+    expect(roomOrigin(translateRoom(b, result.delta))).toEqual({ x: 400, y: 0 });
+  });
 });

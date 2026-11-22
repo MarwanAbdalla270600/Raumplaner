@@ -62,6 +62,7 @@
         <polygon
           class="wall"
           [class.selected]="entry.room.id === selectedRoomId()"
+          [class.thin]="entry.thin"
           data-part="wall"
           [attr.data-room-id]="entry.room.id"
           [attr.points]="wall"
@@ -70,7 +71,12 @@
     }
     @for (entry of rooms(); track entry.room.id) {
       @for (o of entry.openings; track o.opening.id) {
-        <polygon class="opening" [class.window]="o.opening.kind === 'window'" [attr.points]="o.outline" />
+        <polygon
+          class="opening"
+          [class.window]="o.opening.kind === 'window'"
+          [class.thin]="entry.thin"
+          [attr.points]="o.outline"
+        />
         <path class="opening-symbol" [class.window]="o.opening.kind === 'window'" [attr.d]="o.symbol" />
       }
     }

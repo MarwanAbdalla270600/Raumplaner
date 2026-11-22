@@ -41,7 +41,7 @@ z. B. `npx http-server dist/interior-design/browser`.
   Katalog), verschieben, drehen (90°-Schritte, frei per Griff/Slider), skalieren (Griff oder exakte
   Werte), duplizieren, löschen, Ebenen/Z-Reihenfolge und Höhe über Boden zum Stapeln,
   Kollisionswarnung.
-- **Interaktion**: Maus, Touch und Tastatur; Mehrfachauswahl (Shift-Klick, Shift + Ziehen für Auswahlrahmen, Long-Press); Ziehen auf freier Fläche verschiebt die Ansicht;
+- **Interaktion**: Maus, Touch und Tastatur; Mehrfachauswahl (Shift-Klick, Shift + Ziehen für Auswahlrahmen, Long-Press);
   Zoom per Mausrad/Pinch; Ansicht verschieben durch Ziehen auf freier Fläche (Maus oder Finger).
 - **3D-Ansicht** (Three.js, lazy geladen): Wände mit Öffnungen (gemeinsame Wände werden nur einmal
   gebaut, Türen gehen durch beide Hälften), Holzdielen-Boden, Decke, Schatten, Orbit-Steuerung,

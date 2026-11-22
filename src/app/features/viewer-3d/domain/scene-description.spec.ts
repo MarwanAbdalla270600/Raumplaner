@@ -77,4 +77,21 @@ describe('3D scene description', () => {
     expect(bed?.parts.length).toBeGreaterThan(8);
     expect(scene.surfaces.map((surface) => surface.kind)).toEqual(['floor', 'ceiling']);
   });
+
+  it('builds thin walls centred on the outline for rooms without wall thickness', () => {
+    const r = room({ width: 400, wallThickness: 0 });
+    const ys = wallPieces(r, 0)[0].footprint.map((p) => p.y);
+    expect(Math.min(...ys)).toBeCloseTo(-2);
+    expect(Math.max(...ys)).toBeCloseTo(2);
+  });
+
+  it('shares walls of adjacent rooms without wall thickness', () => {
+    const a = room({ id: 'a', x: 0, y: 0, width: 400, depth: 300, wallThickness: 0 });
+    const b = room({ id: 'b', x: 400, y: 0, width: 300, depth: 300, wallThickness: 0 });
+    expect(sharedSpans(a, 1, [a, b])).toHaveLength(1);
+    const xsA = wallPieces(a, 1, [a, b])[0].footprint.map((p) => p.x);
+    const xsB = wallPieces(b, 3, [a, b])[0].footprint.map((p) => p.x);
+    expect([Math.min(...xsA), Math.max(...xsA)].map(Math.round)).toEqual([398, 400]);
+    expect([Math.min(...xsB), Math.max(...xsB)].map(Math.round)).toEqual([400, 402]);
+  });
 });

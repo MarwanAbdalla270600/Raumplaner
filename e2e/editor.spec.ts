@@ -208,6 +208,14 @@ test.describe('editor (desktop)', () => {
     await expect(viewer).toHaveCount(0);
   });
 
+  test('removes the wall thickness for the whole floor', async ({ page }) => {
+    await expect(page.locator('.wall.thin')).toHaveCount(0);
+    await page.getByTestId('no-wall-thickness').getByRole('switch').click();
+    await expect(page.locator('.wall.thin')).toHaveCount(4);
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('.wall.thin')).toHaveCount(0);
+  });
+
   test('persists changes across reloads', async ({ page }) => {
     await addFromCatalog(page, 'bed-double');
     await expect(page.getByText(/Gespeichert|Saved/)).toBeVisible();

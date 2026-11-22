@@ -57,7 +57,9 @@ export function axisAlignedWallBounds(floor: Floor): Aabb[] {
   return floorWallShapes(floor)
     .filter(({ polygon, bounds }) => {
       const boxArea = (bounds.maxX - bounds.minX) * (bounds.maxY - bounds.minY);
-      return boxArea > 0 && polygonArea(polygon) >= boxArea * ratio;
+      // Walls without thickness are lines; horizontal/vertical ones have an empty box area.
+      const isLine = bounds.maxX === bounds.minX || bounds.maxY === bounds.minY;
+      return isLine || (boxArea > 0 && polygonArea(polygon) >= boxArea * ratio);
     })
     .map(({ bounds }) => bounds);
 }

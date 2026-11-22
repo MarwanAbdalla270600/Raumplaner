@@ -15,7 +15,7 @@ import {
   TooltipDirective,
 } from '../../../design-system/components';
 import { ProjectStore } from '../../project/application/project-store';
-import { DIMENSION_LIMITS } from '../../project/domain/defaults';
+import { DIMENSION_LIMITS, ROOM_DEFAULTS } from '../../project/domain/defaults';
 import { FURNITURE_CATEGORIES, FurnitureItem, Opening } from '../../project/domain/model';
 import { maxOpeningOffset, roomOrigin, roomSize, wallEdges } from '../../project/domain/room-geometry';
 import { EditorState } from '../application/editor-state';
@@ -49,6 +49,7 @@ export class PropertiesPanelComponent {
   protected readonly useCases = inject(EditorUseCases);
 
   protected readonly limits = DIMENSION_LIMITS;
+  protected readonly defaultWallThickness = ROOM_DEFAULTS.wallThickness;
   protected readonly rotationStep = ROTATION_STEP_DEGREES;
   protected readonly fullTurn = FULL_TURN;
   protected readonly unit = computed(() => this.store.settings()?.unit ?? 'cm');

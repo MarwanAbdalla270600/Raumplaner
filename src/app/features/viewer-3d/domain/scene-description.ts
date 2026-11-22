@@ -1,5 +1,6 @@
 import { Aabb, addVec, dot, Polygon, subVec, unionAabb } from '../../../core/domain/geometry';
 import { furnitureBounds } from '../../project/domain/furniture-geometry';
+import { THIN_WALL_CM, THIN_WALL_VISUAL_CM } from '../../project/domain/defaults';
 import { Floor, Room } from '../../project/domain/model';
 import { roomOuterBounds, wallEdge, WallEdge, wallEdges, wallSectionPolygon } from '../../project/domain/room-geometry';
 import { furnitureModel, ModelPart } from './furniture-models';
@@ -91,7 +92,10 @@ export function sharedSpans(
       if (dot(edge.direction, otherEdge.direction) > OPPOSITE_COS) continue;
       const gap = dot(subVec(otherEdge.start, edge.start), edge.normal);
       const expected = [room.wallThickness, other.wallThickness];
-      if (gap <= 0 || !expected.some((t) => Math.abs(gap - t) <= Math.max(SHARED_DISTANCE_TOLERANCE, t * 0.25)))
+      if (
+        gap < -SHARED_DISTANCE_TOLERANCE ||
+        !expected.some((t) => Math.abs(gap - t) <= Math.max(SHARED_DISTANCE_TOLERANCE, t * 0.25))
+      )
         continue;
       const { from, to } = intervalOnEdge(edge, otherEdge.start, otherEdge.end);
       const clipped = { from: Math.max(0, from), to: Math.min(edge.length, to) };
@@ -150,6 +154,21 @@ function solidIntervals(height: number, holes: readonly { bottom: number; top: n
 }
 
 /**
+ * Part of the wall cross-section this room builds, measured from the inner face outwards.
+ * Rooms without wall thickness get a thin wall centred on the outline (so the room keeps its
+ * exact size); on shared walls each room builds only its own half.
+ */
+export function wallSlab(room: Room, sharedGap: number | null): { inner: number; outer: number } {
+  const half = THIN_WALL_VISUAL_CM / 2;
+  if (sharedGap !== null) {
+    return sharedGap > THIN_WALL_CM
+      ? { inner: 0, outer: sharedGap / 2 }
+      : { inner: -half, outer: Math.max(0, sharedGap / 2) };
+  }
+  return room.wallThickness < THIN_WALL_CM ? { inner: -half, outer: half } : { inner: 0, outer: room.wallThickness };
+}
+
+/**
  * Splits a wall into prisms: around openings (sill and lintel pieces) and – where the wall is
  * shared with a neighbouring room – only this room's half of the thickness, in its own colour.
  */
@@ -168,9 +187,9 @@ export function wallPieces(room: Room, wall: number, rooms: readonly Room[] = [r
     const to = breaks[i + 1];
     const mid = (from + to) / 2;
     const shared = spans.find((span) => mid > span.from && mid < span.to);
-    const outer = shared ? shared.gap / 2 : room.wallThickness;
+    const { inner, outer } = wallSlab(room, shared?.gap ?? null);
     const holes = cuts.filter((cut) => mid > cut.from && mid < cut.to);
-    const footprint = wallSectionPolygon(room, wall, from, to, 0, outer);
+    const footprint = wallSectionPolygon(room, wall, from, to, inner, outer);
     solidIntervals(room.height, holes).forEach((interval, k) =>
       pieces.push({
         id: `${room.id}-w${wall}-${i}-${k}`,
@@ -184,7 +203,7 @@ export function wallPieces(room: Room, wall: number, rooms: readonly Room[] = [r
     holes
       .filter((hole) => hole.glass)
       .forEach((hole, k) => {
-        const centre = shared ? shared.gap / 2 : room.wallThickness / 2;
+        const centre = (inner + outer) / 2;
         pieces.push({
           id: `${room.id}-w${wall}-${i}-glass-${k}`,
           kind: 'glass',

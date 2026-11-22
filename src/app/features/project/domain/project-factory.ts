@@ -22,6 +22,7 @@ export interface RoomInput {
   readonly width?: number;
   readonly depth?: number;
   readonly height?: number;
+  readonly wallThickness?: number;
   /** Explicit outline; takes precedence over x/y/width/depth. */
   readonly points?: readonly Vec2[];
 }
@@ -39,7 +40,7 @@ export function createRoom(input: RoomInput): Room {
         input.depth ?? ROOM_DEFAULTS.depth,
       ),
     height: input.height ?? ROOM_DEFAULTS.height,
-    wallThickness: ROOM_DEFAULTS.wallThickness,
+    wallThickness: input.wallThickness ?? ROOM_DEFAULTS.wallThickness,
     floorColor: ROOM_DEFAULTS.floorColor,
     wallColor: ROOM_DEFAULTS.wallColor,
     openings: [],

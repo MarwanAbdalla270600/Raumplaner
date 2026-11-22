@@ -170,6 +170,11 @@ export const de = {
   'viewer.tourRoom': 'Raum betreten',
   'viewer.tourExit': 'Rundgang beenden',
   'viewer.tourControls': 'Steuerung',
+  'props.floorWallThickness': 'Wandstärke (alle Räume dieser Etage)',
+  'props.wallsWithoutThickness': 'Wände ohne Dicke',
+  'props.wallThicknessHint':
+    'Bei 0 cm liegen die Wände genau auf der Raumkontur – die Maße entsprechen dann exakt deinem Plan. Einzelne Räume lassen sich im Raum-Panel abweichend einstellen.',
+  'command.wallThickness': 'Wandstärke ändern',
   'command.addFurniture': 'Möbel hinzufügen',
   'command.removeFurniture': 'Möbel löschen',
   'command.updateFurniture': 'Möbel ändern',

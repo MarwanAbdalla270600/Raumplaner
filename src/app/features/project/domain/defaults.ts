@@ -27,3 +27,7 @@ export const DIMENSION_LIMITS = {
 
 /** Gap between a newly added room and the existing rooms. */
 export const NEW_ROOM_GAP = 0;
+
+/** Walls thinner than this count as "without thickness": drawn as a line in 2D and as a thin wall centred on the outline in 3D. */
+export const THIN_WALL_CM = 4;
+export const THIN_WALL_VISUAL_CM = 4;

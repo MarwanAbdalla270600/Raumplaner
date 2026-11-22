@@ -170,6 +170,11 @@ export const en: Record<TranslationKey, string> = {
   'viewer.tourRoom': 'Go to room',
   'viewer.tourExit': 'End walkthrough',
   'viewer.tourControls': 'Controls',
+  'props.floorWallThickness': 'Wall thickness (all rooms on this floor)',
+  'props.wallsWithoutThickness': 'Walls without thickness',
+  'props.wallThicknessHint':
+    'At 0 cm the walls lie exactly on the room outline, so the dimensions match your plan. Individual rooms can be adjusted in the room panel.',
+  'command.wallThickness': 'Change wall thickness',
   'command.addFurniture': 'Add furniture',
   'command.removeFurniture': 'Delete furniture',
   'command.updateFurniture': 'Change furniture',

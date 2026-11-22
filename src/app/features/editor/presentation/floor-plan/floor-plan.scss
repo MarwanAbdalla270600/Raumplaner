@@ -254,3 +254,25 @@
     stroke-width: 3;
   }
 }
+
+/* Walls without thickness are drawn as lines; openings as gaps in the line. */
+.wall.thin {
+  stroke: var(--ds-canvas-wall);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.wall.thin.selected {
+  stroke: var(--ds-canvas-selection);
+}
+
+.opening.thin {
+  stroke: var(--ds-canvas-bg);
+  stroke-width: 5;
+  vector-effect: non-scaling-stroke;
+
+  &.window {
+    stroke: #bcdcf0;
+  }
+}

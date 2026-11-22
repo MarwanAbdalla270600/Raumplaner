@@ -416,6 +416,22 @@
       [value]="store.activeFloor()?.name ?? ''"
       (committed)="useCases.renameActiveFloor($event)"
     />
+    <ds-number-field
+      [label]="i18n.t('props.floorWallThickness')"
+      [unit]="unit()"
+      [min]="0"
+      [max]="limits.maxWallThickness"
+      [value]="useCases.floorWallThickness()"
+      (valueChange)="useCases.setFloorWallThickness($event)"
+      data-testid="floor-wall-thickness"
+    />
+    <ds-switch
+      [label]="i18n.t('props.wallsWithoutThickness')"
+      [checked]="useCases.floorWallThickness() === 0"
+      (checkedChange)="useCases.setFloorWallThickness($event ? 0 : defaultWallThickness)"
+      data-testid="no-wall-thickness"
+    />
+    <p class="muted">{{ i18n.t('props.wallThicknessHint') }}</p>
     <ds-select
       [label]="i18n.t('props.gridSize')"
       [options]="gridOptions"

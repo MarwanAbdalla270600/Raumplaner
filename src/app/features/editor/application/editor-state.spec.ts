@@ -98,6 +98,17 @@ describe('EditorUseCases', () => {
     expect(useCases.finishDraft()).toBeNull();
   });
 
+  it('removes the wall thickness of all rooms in one undo step and uses it for new rooms', () => {
+    useCases.addRoom({ width: 400, depth: 300, height: 250, x: 0, y: 0 });
+    useCases.addRoom({ width: 300, depth: 300, height: 250 });
+    const steps = store.history().past.length;
+    useCases.setFloorWallThickness(0);
+    expect(store.history().past.length).toBe(steps + 1);
+    expect(state.displayFloor()?.rooms.every((r) => r.wallThickness === 0)).toBe(true);
+    const next = useCases.addRoom({ width: 200, depth: 200, height: 250 });
+    expect(next?.wallThickness).toBe(0);
+  });
+
   it('edits corners of a room', () => {
     const room = useCases.addRoom({ width: 400, depth: 300, height: 250, x: 0, y: 0 });
     if (!room) throw new Error('room expected');

@@ -40,6 +40,7 @@ import {
   VertexDragSession,
 } from '../../application/drag-sessions';
 import { axisAlignedWallBounds } from '../../domain/collision';
+import { THIN_WALL_CM } from '../../../project/domain/defaults';
 import { EditorState } from '../../application/editor-state';
 import { EditorUseCases } from '../../application/editor-use-cases';
 import { computeClearances } from '../../domain/measurements';
@@ -193,6 +194,7 @@ export class FloorPlanComponent {
       labelColor: contrastingTextColor(room.floorColor),
       area: `${areaFormat.format(roomArea(room) / CM2_PER_M2)} m²`,
       invalid: room.id === invalidId,
+      thin: room.wallThickness < THIN_WALL_CM,
       edges: wallEdges(room)
         .filter((edge) => edge.length * scale >= MIN_EDGE_LABEL_PX)
         .map((edge) => {

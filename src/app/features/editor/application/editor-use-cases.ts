@@ -219,7 +219,7 @@ export class EditorUseCases {
     const position =
       input.x !== undefined && input.y !== undefined
         ? { x: input.x, y: input.y }
-        : nextRoomPosition(floor.rooms, ROOM_DEFAULTS.wallThickness);
+        : nextRoomPosition(floor.rooms, this.floorWallThickness());
     const width = clampLength(input.width, DIMENSION_LIMITS.minRoomLength);
     const depth = clampLength(input.depth, DIMENSION_LIMITS.minRoomLength);
     return this.addRoomWithPoints(
@@ -233,6 +233,27 @@ export class EditorUseCases {
   addRoomWithPoints(points: readonly Vec2[], name?: string, height: number = ROOM_DEFAULTS.height): Room | null {
     const room = this.buildRoom(points, name, height);
     return room ? this.insertRoom(room) : null;
+  }
+
+  /** Wall thickness used for new rooms: the one of the existing rooms on the floor. */
+  floorWallThickness(): number {
+    return this.store.activeFloor()?.rooms[0]?.wallThickness ?? ROOM_DEFAULTS.wallThickness;
+  }
+
+  /** Sets the wall thickness of all rooms on the active floor (one undo step). 0 = no wall thickness. */
+  setFloorWallThickness(thickness: number): void {
+    const floor = this.store.activeFloor();
+    const value = Math.min(DIMENSION_LIMITS.maxWallThickness, Math.max(0, thickness));
+    const changed = floor?.rooms.filter((room) => room.wallThickness !== value) ?? [];
+    if (!floor || changed.length === 0) {
+      return;
+    }
+    this.store.execute(
+      new CompositeCommand(
+        'command.wallThickness',
+        changed.map((room) => new UpdateRoomCommand(floor.id, room, { ...room, wallThickness: value })),
+      ),
+    );
   }
 
   /** Finishes the outline drawn point by point; returns null if it is not a valid room. */
@@ -268,7 +289,9 @@ export class EditorUseCases {
   /** Creates a rectangular room that shares the given wall of an existing room, with a door in it. */
   attachRoom(roomId: EntityId, wall: WallIndex, depth = ATTACHED_ROOM_DEPTH): Room | null {
     const source = this.store.activeFloor()?.rooms.find((entry) => entry.id === roomId);
-    const room = source ? this.buildRoom(pointsAttachedToWall(source, wall, depth), undefined, source.height) : null;
+    const room = source
+      ? this.buildRoom(pointsAttachedToWall(source, wall, depth), undefined, source.height, source.wallThickness)
+      : null;
     if (!source || !room) {
       return null;
     }
@@ -417,7 +440,12 @@ export class EditorUseCases {
     return (edges.find((edge) => !used.has(edge.index)) ?? edges[0]).index;
   }
 
-  private buildRoom(points: readonly Vec2[], name: string | undefined, height: number): Room | null {
+  private buildRoom(
+    points: readonly Vec2[],
+    name: string | undefined,
+    height: number,
+    wallThickness = this.floorWallThickness(),
+  ): Room | null {
     const floor = this.store.activeFloor();
     if (!floor || !isValidOutline(points)) {
       return null;
@@ -426,6 +454,7 @@ export class EditorUseCases {
       name: name?.trim() || this.i18n.t('editor.newRoomName', { index: floor.rooms.length + 1 }),
       points,
       height,
+      wallThickness,
     });
     return withPoints(draft, points);
   }
