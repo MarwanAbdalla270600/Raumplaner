@@ -220,66 +220,119 @@
 } @else if (room(); as room) {
   <section class="section">
     <ds-text-field [label]="i18n.t('common.name')" [value]="room.name" (committed)="updateRoom({ name: $event })" />
-    <h3>{{ i18n.t('props.size') }}</h3>
-    <div class="grid three">
-      <ds-number-field
-        [label]="i18n.t('props.width')"
-        [unit]="unit()"
-        [min]="limits.minRoomLength"
-        [value]="room.width"
-        (valueChange)="updateRoom({ width: $event })"
-        data-testid="room-width"
-      />
-      <ds-number-field
-        [label]="i18n.t('props.depth')"
-        [unit]="unit()"
-        [min]="limits.minRoomLength"
-        [value]="room.depth"
-        (valueChange)="updateRoom({ depth: $event })"
-      />
-      <ds-number-field
-        [label]="i18n.t('props.height')"
-        [unit]="unit()"
-        [min]="limits.minRoomLength"
-        [value]="room.height"
-        (valueChange)="updateRoom({ height: $event })"
-      />
-    </div>
-    <h3>{{ i18n.t('props.position') }}</h3>
-    <div class="grid three">
-      <ds-number-field
-        [label]="i18n.t('props.x')"
-        [unit]="unit()"
-        [value]="room.x"
-        (valueChange)="updateRoom({ x: $event })"
-      />
-      <ds-number-field
-        [label]="i18n.t('props.y')"
-        [unit]="unit()"
-        [value]="room.y"
-        (valueChange)="updateRoom({ y: $event })"
-      />
-      <ds-number-field
-        [label]="i18n.t('props.wallThickness')"
-        [unit]="unit()"
-        [min]="0"
-        [max]="limits.maxWallThickness"
-        [value]="room.wallThickness"
-        (valueChange)="updateRoom({ wallThickness: $event })"
-      />
-    </div>
-    <div class="grid">
-      <ds-color-field
-        [label]="i18n.t('props.floorColor')"
-        [value]="room.floorColor"
-        (valueChange)="updateRoom({ floorColor: $event })"
-      />
-      <ds-color-field
-        [label]="i18n.t('props.wallColor')"
-        [value]="room.wallColor"
-        (valueChange)="updateRoom({ wallColor: $event })"
-      />
-    </div>
+    @if (roomGeometry(); as geo) {
+      <h3>{{ i18n.t('props.size') }}</h3>
+      <div class="grid three">
+        <ds-number-field
+          [label]="i18n.t('props.width')"
+          [unit]="unit()"
+          [min]="limits.minRoomLength"
+          [value]="geo.size.width"
+          (valueChange)="updateRoom({ width: $event })"
+          data-testid="room-width"
+        />
+        <ds-number-field
+          [label]="i18n.t('props.depth')"
+          [unit]="unit()"
+          [min]="limits.minRoomLength"
+          [value]="geo.size.depth"
+          (valueChange)="updateRoom({ depth: $event })"
+        />
+        <ds-number-field
+          [label]="i18n.t('props.height')"
+          [unit]="unit()"
+          [min]="limits.minRoomLength"
+          [value]="room.height"
+          (valueChange)="updateRoom({ height: $event })"
+        />
+      </div>
+      <h3>{{ i18n.t('props.position') }}</h3>
+      <div class="grid three">
+        <ds-number-field
+          [label]="i18n.t('props.x')"
+          [unit]="unit()"
+          [value]="geo.origin.x"
+          (valueChange)="updateRoom({ x: $event })"
+        />
+        <ds-number-field
+          [label]="i18n.t('props.y')"
+          [unit]="unit()"
+          [value]="geo.origin.y"
+          (valueChange)="updateRoom({ y: $event })"
+        />
+        <ds-number-field
+          [label]="i18n.t('props.wallThickness')"
+          [unit]="unit()"
+          [min]="0"
+          [max]="limits.maxWallThickness"
+          [value]="room.wallThickness"
+          (valueChange)="updateRoom({ wallThickness: $event })"
+        />
+      </div>
+      <div class="grid">
+        <ds-color-field
+          [label]="i18n.t('props.floorColor')"
+          [value]="room.floorColor"
+          (valueChange)="updateRoom({ floorColor: $event })"
+        />
+        <ds-color-field
+          [label]="i18n.t('props.wallColor')"
+          [value]="room.wallColor"
+          (valueChange)="updateRoom({ wallColor: $event })"
+        />
+      </div>
+
+      <details class="disclosure">
+        <summary>{{ i18n.t('props.corners', { count: room.points.length }) }}</summary>
+        <p class="muted">{{ i18n.t('props.cornersHint') }}</p>
+        @for (point of room.points; track $index; let i = $index) {
+          <div class="corner-row">
+            <span class="corner-index">{{ i + 1 }}</span>
+            <ds-number-field
+              [label]="i18n.t('props.x')"
+              [unit]="unit()"
+              [value]="point.x"
+              (valueChange)="setCorner(i, 'x', $event)"
+            />
+            <ds-number-field
+              [label]="i18n.t('props.y')"
+              [unit]="unit()"
+              [value]="point.y"
+              (valueChange)="setCorner(i, 'y', $event)"
+            />
+            <button
+              dsButton
+              variant="ghost"
+              [iconOnly]="true"
+              [disabled]="room.points.length <= 3"
+              (click)="removeCorner(i)"
+              [attr.aria-label]="i18n.t('props.removeCorner', { index: i + 1 })"
+              [dsTooltip]="i18n.t('props.removeCorner', { index: i + 1 })"
+            >
+              <ds-icon name="trash" [size]="16" />
+            </button>
+          </div>
+        }
+      </details>
+
+      <details class="disclosure" data-testid="walls-disclosure">
+        <summary>{{ i18n.t('props.walls') }}</summary>
+        <p class="muted">{{ i18n.t('props.attachHint') }}</p>
+        @for (wall of geo.walls; track wall.index) {
+          <div class="wall-row">
+            <span>{{ wall.label }}</span>
+            <button
+              dsButton
+              size="sm"
+              (click)="attachRoom(wall.index)"
+              [attr.data-testid]="'attach-room-' + wall.index"
+            >
+              <ds-icon name="room" [size]="16" /> {{ i18n.t('props.attachRoom') }}
+            </button>
+          </div>
+        }
+      </details>
+    }
 
     <div class="heading-row">
       <h3>{{ i18n.t('props.openings') }}</h3>
@@ -287,7 +340,7 @@
         <button dsButton size="sm" (click)="useCases.addOpening(room.id, 'door')" data-testid="add-door">
           <ds-icon name="door" [size]="16" /> {{ i18n.t('props.addDoor') }}
         </button>
-        <button dsButton size="sm" (click)="useCases.addOpening(room.id, 'window', 'north')">
+        <button dsButton size="sm" (click)="useCases.addOpening(room.id, 'window')">
           <ds-icon name="window" [size]="16" /> {{ i18n.t('props.addWindow') }}
         </button>
       </div>
@@ -299,8 +352,8 @@
           <ds-select
             [label]="i18n.t('props.wall')"
             [options]="wallOptions()"
-            [value]="opening.wall"
-            (valueChange)="updateOpening(opening, { wall: $any($event) })"
+            [value]="'' + opening.wall"
+            (valueChange)="setOpeningWall(opening, $event)"
           />
           <ds-number-field
             [label]="i18n.t('props.offset')"

@@ -3,7 +3,7 @@ import { EntityId } from '../../../core/domain/id';
 import { ProjectStore } from '../../project/application/project-store';
 import { Floor, FurnitureItem, Room } from '../../project/domain/model';
 import { detectCollisions } from '../domain/collision';
-import { Aabb, unionAabb, vec } from '../../../core/domain/geometry';
+import { Aabb, unionAabb, Vec2, vec } from '../../../core/domain/geometry';
 import { furnitureBounds } from '../../project/domain/furniture-geometry';
 import { roomOuterBounds } from '../../project/domain/room-geometry';
 import { DEFAULT_VIEWPORT, fitToBounds, Viewport, zoomAt } from '../domain/viewport';
@@ -17,12 +17,24 @@ export const NO_SELECTION: Selection = { kind: 'none' };
 
 export type EditorTool = 'select' | 'draw-room';
 
+/** Outline being drawn point by point with the draw tool. */
+export interface DraftOutline {
+  readonly points: readonly Vec2[];
+  /** Snapped pointer position (rubber band to the next point). */
+  readonly cursor: Vec2 | null;
+  readonly guide: readonly [Vec2, Vec2] | null;
+}
+
 /** Transient, not-yet-committed changes during a drag gesture. */
 export interface Preview {
   readonly furniture: ReadonlyMap<EntityId, FurnitureItem>;
   readonly rooms: ReadonlyMap<EntityId, Room>;
   readonly guideX: number | null;
   readonly guideY: number | null;
+  /** Wall segments a dragged room or corner snapped to. */
+  readonly glue?: readonly (readonly [Vec2, Vec2])[];
+  /** Room whose previewed outline is invalid (self-intersecting). */
+  readonly invalidRoomId?: EntityId | null;
 }
 
 export function applyPreview(floor: Floor, preview: Preview | null): Floor {
@@ -46,6 +58,7 @@ export class EditorState {
   readonly viewport = signal<Viewport>(DEFAULT_VIEWPORT);
   readonly preview = signal<Preview | null>(null);
   readonly show3d = signal(false);
+  readonly draft = signal<DraftOutline | null>(null);
   /** Size of the drawing surface in px, reported by the canvas. */
   readonly canvasSize = signal({ width: 0, height: 0 });
 

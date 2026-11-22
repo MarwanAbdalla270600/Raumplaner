@@ -1,15 +1,16 @@
 import {
   Aabb,
+  aabbFromPoints,
   aabbIntersects,
-  aabbToPolygon,
   convexPolygonsIntersect,
   intervalsOverlap,
   Polygon,
+  polygonArea,
 } from '../../../core/domain/geometry';
 import { EntityId } from '../../../core/domain/id';
 import { furnitureBounds, furnitureFootprint, furnitureTop } from '../../project/domain/furniture-geometry';
 import { Floor, FurnitureItem } from '../../project/domain/model';
-import { wallRects } from '../../project/domain/room-geometry';
+import { wallPolygons } from '../../project/domain/room-geometry';
 
 /** Items flatter than this (rugs, mats) never collide. */
 export const FLAT_ITEM_MAX_HEIGHT = 2;
@@ -37,14 +38,38 @@ export function furnitureCollide(a: FurnitureItem, b: FurnitureItem): boolean {
   );
 }
 
-/** Does the item overlap one of the given wall rectangles? */
-export function collidesWithWalls(item: FurnitureItem, walls: readonly Aabb[]): boolean {
+/** A wall section as convex polygon together with its bounding box (pre-filter). */
+export interface WallShape {
+  readonly polygon: Polygon;
+  readonly bounds: Aabb;
+}
+
+export function floorWallShapes(floor: Floor): WallShape[] {
+  return floor.rooms.flatMap(wallPolygons).map((polygon) => ({ polygon, bounds: aabbFromPoints(polygon) }));
+}
+
+/**
+ * Bounding boxes of the axis-aligned walls (used for snapping and clearance lines, where a box
+ * is a good approximation; diagonal walls would produce misleading boxes and are skipped).
+ */
+export function axisAlignedWallBounds(floor: Floor): Aabb[] {
+  const ratio = 0.95;
+  return floorWallShapes(floor)
+    .filter(({ polygon, bounds }) => {
+      const boxArea = (bounds.maxX - bounds.minX) * (bounds.maxY - bounds.minY);
+      return boxArea > 0 && polygonArea(polygon) >= boxArea * ratio;
+    })
+    .map(({ bounds }) => bounds);
+}
+
+/** Does the item overlap one of the given walls? */
+export function collidesWithWalls(item: FurnitureItem, walls: readonly WallShape[]): boolean {
   if (!isSolid(item)) {
     return false;
   }
   const box = furnitureBounds(item);
   const footprint = furnitureFootprint(item);
-  return walls.some((wall) => aabbIntersects(box, wall) && convexPolygonsIntersect(footprint, aabbToPolygon(wall)));
+  return walls.some((wall) => aabbIntersects(box, wall.bounds) && convexPolygonsIntersect(footprint, wall.polygon));
 }
 
 interface SolidShape {
@@ -77,11 +102,11 @@ export function detectCollisions(floor: Floor): CollisionReport {
     }
   }
 
-  const walls = floor.rooms.flatMap(wallRects).map((wall) => ({ wall, polygon: aabbToPolygon(wall) }));
+  const walls = floorWallShapes(floor);
   const wallHits = new Set<EntityId>();
   for (const shape of shapes) {
     const hitsWall = walls.some(
-      ({ wall, polygon }) => aabbIntersects(shape.bounds, wall) && convexPolygonsIntersect(shape.footprint, polygon),
+      (wall) => aabbIntersects(shape.bounds, wall.bounds) && convexPolygonsIntersect(shape.footprint, wall.polygon),
     );
     if (hitsWall) {
       wallHits.add(shape.item.id);

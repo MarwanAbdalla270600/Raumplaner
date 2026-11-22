@@ -1,7 +1,6 @@
 import { Vec2, vec } from '../../../core/domain/geometry';
 import { Floor, FurnitureItem } from '../../project/domain/model';
-import { wallRects } from '../../project/domain/room-geometry';
-import { collidesWithWalls, furnitureCollide } from './collision';
+import { collidesWithWalls, floorWallShapes, furnitureCollide } from './collision';
 
 /** Distance between candidate positions when searching for free space (cm). */
 export const PLACEMENT_STEP_CM = 20;
@@ -28,7 +27,7 @@ function* ringOffsets(maxRings: number): Generator<Vec2> {
  * furniture nor with walls. Falls back to `preferred` when no free spot is found.
  */
 export function findFreePosition(floor: Floor, item: FurnitureItem, preferred: Vec2, step = PLACEMENT_STEP_CM): Vec2 {
-  const walls = floor.rooms.flatMap(wallRects);
+  const walls = floorWallShapes(floor);
   for (const offset of ringOffsets(PLACEMENT_MAX_RINGS)) {
     const candidate = vec(preferred.x + offset.x * step, preferred.y + offset.y * step);
     const moved = { ...item, x: candidate.x, y: candidate.y };

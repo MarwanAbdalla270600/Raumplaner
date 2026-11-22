@@ -2,6 +2,7 @@
   #svg
   class="canvas"
   [class.drawing]="state.tool() === 'draw-room'"
+  [class.panning]="panning()"
   role="application"
   tabindex="0"
   aria-roledescription="Grundriss"
@@ -14,6 +15,7 @@
   (wheel)="onWheel($event)"
   (dragover)="onDragOver($event)"
   (drop)="onDrop($event)"
+  (dblclick)="onDoubleClick($event)"
   (contextmenu)="$event.preventDefault()"
 >
   <defs>
@@ -43,75 +45,59 @@
   <rect class="grid" width="100%" height="100%" fill="url(#grid-major)" />
 
   <g [attr.transform]="worldTransform()">
-    <!-- Rooms -->
+    <!-- Rooms: floors first, then all walls, then openings – so doors stay visible in shared walls. -->
     @for (entry of rooms(); track entry.room.id) {
-      <g class="room" [class.selected]="entry.room.id === selectedRoomId()">
-        <rect
-          class="room-floor"
-          data-part="floor"
+      <polygon
+        class="room-floor"
+        [class.selected]="entry.room.id === selectedRoomId()"
+        [class.invalid]="entry.invalid"
+        data-part="floor"
+        [attr.data-room-id]="entry.room.id"
+        [attr.points]="entry.outline"
+        [attr.fill]="entry.room.floorColor"
+      />
+    }
+    @for (entry of rooms(); track entry.room.id) {
+      @for (wall of entry.walls; track $index) {
+        <polygon
+          class="wall"
+          [class.selected]="entry.room.id === selectedRoomId()"
+          data-part="wall"
           [attr.data-room-id]="entry.room.id"
-          [attr.x]="entry.room.x"
-          [attr.y]="entry.room.y"
-          [attr.width]="entry.room.width"
-          [attr.height]="entry.room.depth"
-          [attr.fill]="entry.room.floorColor"
+          [attr.points]="wall"
         />
-        @for (wall of entry.walls; track $index) {
-          <rect
-            class="wall"
-            data-part="wall"
-            [attr.data-room-id]="entry.room.id"
-            [attr.x]="wall.minX"
-            [attr.y]="wall.minY"
-            [attr.width]="boxWidth(wall)"
-            [attr.height]="boxHeight(wall)"
-          />
-        }
-        @for (o of entry.openings; track o.opening.id) {
-          <rect
-            class="opening"
-            [class.window]="o.opening.kind === 'window'"
-            [attr.x]="o.rect.minX"
-            [attr.y]="o.rect.minY"
-            [attr.width]="boxWidth(o.rect)"
-            [attr.height]="boxHeight(o.rect)"
-          />
-          <path class="opening-symbol" [class.window]="o.opening.kind === 'window'" [attr.d]="o.symbol" />
-        }
-        <text
-          class="room-label"
-          [attr.x]="entry.center.x"
-          [attr.y]="entry.center.y"
-          [attr.font-size]="roomLabelFont()"
-          [attr.fill]="entry.labelColor"
-        >
-          <tspan [attr.x]="entry.center.x" dy="-0.2em">{{ entry.room.name }}</tspan>
-          <tspan [attr.x]="entry.center.x" dy="1.3em" class="room-area">{{ entry.area }}</tspan>
-        </text>
-        @if (settings()?.showDimensions) {
+      }
+    }
+    @for (entry of rooms(); track entry.room.id) {
+      @for (o of entry.openings; track o.opening.id) {
+        <polygon class="opening" [class.window]="o.opening.kind === 'window'" [attr.points]="o.outline" />
+        <path class="opening-symbol" [class.window]="o.opening.kind === 'window'" [attr.d]="o.symbol" />
+      }
+    }
+    @for (entry of rooms(); track entry.room.id) {
+      <text
+        class="room-label"
+        [attr.x]="entry.center.x"
+        [attr.y]="entry.center.y"
+        [attr.font-size]="roomLabelFont()"
+        [style.fill]="entry.labelColor"
+      >
+        <tspan [attr.x]="entry.center.x" dy="-0.2em">{{ entry.room.name }}</tspan>
+        <tspan [attr.x]="entry.center.x" dy="1.3em" class="room-area">{{ entry.area }}</tspan>
+      </text>
+      @if (settings()?.showDimensions) {
+        @for (edge of entry.edges; track edge.index) {
           <text
             class="dimension-label"
-            [attr.x]="entry.center.x"
-            [attr.y]="entry.inner.minY - entry.room.wallThickness - 6 * px()"
+            [attr.transform]="edge.transform"
             [attr.font-size]="labelFont()"
+            [style.fill]="entry.labelColor"
+            dominant-baseline="central"
           >
-            {{ entry.widthLabel }}
-          </text>
-          <text
-            class="dimension-label"
-            [attr.font-size]="labelFont()"
-            [attr.transform]="
-              'translate(' +
-              (entry.inner.minX - entry.room.wallThickness - 6 * px()) +
-              ' ' +
-              entry.center.y +
-              ') rotate(-90)'
-            "
-          >
-            {{ entry.depthLabel }}
+            {{ edge.label }}
           </text>
         }
-      </g>
+      }
     }
 
     <!-- Furniture -->
@@ -147,6 +133,15 @@
 
     <!-- Snap guides -->
     @if (state.preview(); as preview) {
+      @for (segment of preview.glue ?? []; track $index) {
+        <line
+          class="glue"
+          [attr.x1]="segment[0].x"
+          [attr.y1]="segment[0].y"
+          [attr.x2]="segment[1].x"
+          [attr.y2]="segment[1].y"
+        />
+      }
       @if (preview.guideX !== null) {
         <line class="guide" [attr.x1]="preview.guideX" [attr.x2]="preview.guideX" y1="-100000" y2="100000" />
       }
@@ -183,6 +178,54 @@
       </g>
     }
 
+    <!-- Corner handles of the selected room -->
+    @if (roomHandles(); as rh) {
+      <g class="room-handles">
+        @for (m of rh.midpoints; track m.index) {
+          <circle
+            class="handle midpoint"
+            data-handle="midpoint"
+            [attr.data-index]="m.index"
+            [attr.cx]="m.point.x"
+            [attr.cy]="m.point.y"
+            [attr.r]="rh.size / 2.6"
+          >
+            <title>{{ i18n.t('editor.addCorner') }}</title>
+          </circle>
+        }
+        @for (v of rh.vertices; track v.index) {
+          <rect
+            class="handle vertex"
+            data-handle="vertex"
+            [attr.data-index]="v.index"
+            [attr.x]="v.point.x - rh.size / 2"
+            [attr.y]="v.point.y - rh.size / 2"
+            [attr.width]="rh.size"
+            [attr.height]="rh.size"
+          >
+            <title>{{ i18n.t('editor.moveCorner') }}</title>
+          </rect>
+        }
+      </g>
+    }
+
+    <!-- Outline being drawn -->
+    @if (draft(); as d) {
+      <polyline class="draft-outline" [attr.points]="d.points" />
+      @if (d.guide; as g) {
+        <line class="glue" [attr.x1]="g[0].x" [attr.y1]="g[0].y" [attr.x2]="g[1].x" [attr.y2]="g[1].y" />
+      }
+      @for (corner of d.corners; track $index) {
+        <circle
+          class="draft-corner"
+          [class.first]="$first"
+          [attr.cx]="corner.x"
+          [attr.cy]="corner.y"
+          [attr.r]="($first ? 7 : 4) * px()"
+        />
+      }
+    }
+
     @if (marquee(); as m) {
       <rect
         class="marquee"
@@ -192,14 +235,8 @@
         [attr.height]="boxHeight(m)"
       />
     }
-    @if (drawRect(); as d) {
-      <rect
-        class="draw-rect"
-        [attr.x]="d.minX"
-        [attr.y]="d.minY"
-        [attr.width]="boxWidth(d)"
-        [attr.height]="boxHeight(d)"
-      />
+    @if (drawOutline(); as d) {
+      <polygon class="draw-rect" [attr.points]="toPoints(d)" />
     }
   </g>
 </svg>

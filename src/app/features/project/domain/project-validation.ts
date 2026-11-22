@@ -1,6 +1,6 @@
 import { isHexColor } from '../../../core/domain/color';
 import { isLengthUnit } from '../../../core/domain/units';
-import { FURNITURE_CATEGORIES, WALL_SIDES } from './model';
+import { FURNITURE_CATEGORIES } from './model';
 
 /**
  * Structural validation of untrusted project data (e.g. an imported JSON file).
@@ -86,10 +86,21 @@ const furnitureSpecShape = {
   weight: nullable(nonNegativeNumber),
 };
 
+const wallIndex: Check = (value, path, errors) => {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) fail(errors, path, 'wall index expected');
+};
+
+const pointCheck = object({ x: finiteNumber, y: finiteNumber });
+
+const outline: Check = (value, path, errors) => {
+  array(pointCheck)(value, path, errors);
+  if (Array.isArray(value) && value.length < 3) fail(errors, path, 'at least three points expected');
+};
+
 const openingCheck = object({
   id: string,
   kind: oneOf(['door', 'window']),
-  wall: oneOf(WALL_SIDES),
+  wall: wallIndex,
   offset: nonNegativeNumber,
   width: positiveNumber,
   height: positiveNumber,
@@ -99,10 +110,7 @@ const openingCheck = object({
 const roomCheck = object({
   id: string,
   name: string,
-  x: finiteNumber,
-  y: finiteNumber,
-  width: positiveNumber,
-  depth: positiveNumber,
+  points: outline,
   height: positiveNumber,
   wallThickness: nonNegativeNumber,
   floorColor: color,

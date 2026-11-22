@@ -9,7 +9,18 @@ import {
   viewChild,
   afterNextRender,
 } from '@angular/core';
-import { Aabb, aabbFromCorners, aabbWidth, aabbHeight, Vec2, vec } from '../../../../core/domain/geometry';
+import {
+  Aabb,
+  aabbFromCorners,
+  aabbWidth,
+  aabbHeight,
+  addVec,
+  distanceBetween,
+  lerpVec,
+  Polygon,
+  Vec2,
+  vec,
+} from '../../../../core/domain/geometry';
 import { EntityId } from '../../../../core/domain/id';
 import { formatLength } from '../../../../core/domain/units';
 import { contrastingTextColor } from '../../../../core/domain/color';
@@ -18,14 +29,17 @@ import { CatalogStore } from '../../../catalog/application/catalog-store';
 import { ProjectStore } from '../../../project/application/project-store';
 import { furnitureBounds, sortByLayer } from '../../../project/domain/furniture-geometry';
 import { FurnitureItem } from '../../../project/domain/model';
-import { openingRect, roomArea, roomCenter, roomInnerBounds, wallRects } from '../../../project/domain/room-geometry';
+import { openingPolygon, roomArea, roomCenter, wallEdges, wallPolygons } from '../../../project/domain/room-geometry';
 import {
-  drawnRoomBounds,
+  drawnRectangle,
   FurnitureDragSession,
   isValidRoomSize,
   RoomDragSession,
+  snapDrawPoint,
   SnapOptions,
+  VertexDragSession,
 } from '../../application/drag-sessions';
+import { axisAlignedWallBounds } from '../../domain/collision';
 import { EditorState } from '../../application/editor-state';
 import { EditorUseCases } from '../../application/editor-use-cases';
 import { computeClearances } from '../../domain/measurements';
@@ -71,7 +85,9 @@ type Gesture =
   | { readonly kind: 'room'; readonly session: RoomDragSession; readonly startWorld: Vec2; moved: boolean }
   | { readonly kind: 'resize'; readonly item: FurnitureItem; readonly startWorld: Vec2; moved: boolean }
   | { readonly kind: 'rotate'; readonly item: FurnitureItem; moved: boolean }
+  | { readonly kind: 'vertex'; readonly session: VertexDragSession; readonly startWorld: Vec2; moved: boolean }
   | { readonly kind: 'draw'; readonly startWorld: Vec2; moved: boolean }
+  | { readonly kind: 'draw-point'; moved: boolean }
   | {
       readonly kind: 'pinch';
       readonly startDistance: number;
@@ -83,23 +99,32 @@ interface HitTarget {
   readonly itemId: EntityId | null;
   readonly roomId: EntityId | null;
   readonly part: 'floor' | 'wall' | null;
-  readonly handle: 'resize' | 'rotate' | null;
+  readonly handle: 'resize' | 'rotate' | 'vertex' | 'midpoint' | null;
+  readonly index: number;
 }
+
+const HANDLES = new Set(['resize', 'rotate', 'vertex', 'midpoint']);
 
 function hitTest(target: EventTarget | null): HitTarget {
   const element = target instanceof Element ? target : null;
   const item = element?.closest<SVGElement>('[data-item-id]');
   const room = element?.closest<SVGElement>('[data-room-id]');
-  const handle = element?.closest<SVGElement>('[data-handle]')?.dataset['handle'];
+  const handleElement = element?.closest<SVGElement>('[data-handle]');
+  const handle = handleElement?.dataset['handle'] ?? '';
   return {
     itemId: item?.dataset['itemId'] ?? null,
     roomId: room?.dataset['roomId'] ?? null,
     part: (room?.dataset['part'] as HitTarget['part']) ?? null,
-    handle: handle === 'resize' || handle === 'rotate' ? handle : null,
+    handle: HANDLES.has(handle) ? (handle as HitTarget['handle']) : null,
+    index: Number(handleElement?.dataset['index'] ?? -1),
   };
 }
 
-const distance = (a: Vec2, b: Vec2): number => Math.hypot(a.x - b.x, a.y - b.y);
+const distance = distanceBetween;
+const toPoints = (polygon: Polygon): string => polygon.map((p) => `${p.x},${p.y}`).join(' ');
+/** Edges shorter than this on screen get no length label. */
+const MIN_EDGE_LABEL_PX = 48;
+const EDGE_LABEL_INSET_PX = 12;
 const midpoint = (a: Vec2, b: Vec2): Vec2 => vec((a.x + b.x) / 2, (a.y + b.y) / 2);
 
 @Component({
@@ -122,7 +147,10 @@ export class FloorPlanComponent {
   protected readonly floor = this.state.displayFloor;
   protected readonly settings = this.store.settings;
   protected readonly marquee = signal<Aabb | null>(null);
-  protected readonly drawRect = signal<Aabb | null>(null);
+  /** True while the view is being dragged (grabbing cursor). */
+  protected readonly panning = signal(false);
+  protected readonly drawOutline = signal<readonly Vec2[] | null>(null);
+  protected readonly toPoints = toPoints;
 
   protected readonly worldTransform = computed(() => {
     const { offsetX, offsetY, scale } = this.state.viewport();
@@ -149,25 +177,58 @@ export class FloorPlanComponent {
   protected readonly rooms = computed(() => {
     const unit = this.settings()?.unit ?? 'cm';
     const locale = this.i18n.intlLocale();
-    return (this.floor()?.rooms ?? []).map((room) => {
-      const inner = roomInnerBounds(room);
-      const center = roomCenter(room);
-      return {
-        room,
-        walls: wallRects(room),
-        openings: room.openings.map((opening) => ({
-          opening,
-          rect: openingRect(room, opening),
-          symbol: opening.kind === 'door' ? doorSymbolPath(room, opening) : windowSymbolPath(room, opening),
-        })),
-        center,
-        labelColor: contrastingTextColor(room.floorColor),
-        area: `${new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(roomArea(room) / CM2_PER_M2)} m²`,
-        widthLabel: formatLength(room.width, unit, locale),
-        depthLabel: formatLength(room.depth, unit, locale),
-        inner,
-      };
-    });
+    const scale = this.state.viewport().scale;
+    const invalidId = this.state.preview()?.invalidRoomId ?? null;
+    const areaFormat = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+    return (this.floor()?.rooms ?? []).map((room) => ({
+      room,
+      outline: toPoints(room.points),
+      walls: wallPolygons(room).map(toPoints),
+      openings: room.openings.map((opening) => ({
+        opening,
+        outline: toPoints(openingPolygon(room, opening)),
+        symbol: opening.kind === 'door' ? doorSymbolPath(room, opening) : windowSymbolPath(room, opening),
+      })),
+      center: roomCenter(room),
+      labelColor: contrastingTextColor(room.floorColor),
+      area: `${areaFormat.format(roomArea(room) / CM2_PER_M2)} m²`,
+      invalid: room.id === invalidId,
+      edges: wallEdges(room)
+        .filter((edge) => edge.length * scale >= MIN_EDGE_LABEL_PX)
+        .map((edge) => {
+          const mid = addVec(lerpVec(edge.start, edge.end, 0.5), edge.normal, -EDGE_LABEL_INSET_PX / scale);
+          let angle = (Math.atan2(edge.direction.y, edge.direction.x) * 180) / Math.PI;
+          if (angle > 90) angle -= 180;
+          if (angle < -90) angle += 180;
+          return {
+            index: edge.index,
+            label: formatLength(edge.length, unit, locale),
+            transform: `translate(${mid.x} ${mid.y}) rotate(${angle})`,
+          };
+        }),
+    }));
+  });
+
+  /** Corner and wall-midpoint handles of the selected room. */
+  protected readonly roomHandles = computed(() => {
+    const room = this.state.selectedRoom();
+    if (!room || this.state.tool() !== 'select') return null;
+    const px = this.px();
+    return {
+      size: this.handleSizePx * px,
+      vertices: room.points.map((point, index) => ({ point, index })),
+      midpoints: wallEdges(room)
+        .filter((edge) => edge.length * this.state.viewport().scale >= MIN_EDGE_LABEL_PX)
+        .map((edge) => ({ point: lerpVec(edge.start, edge.end, 0.5), index: edge.index })),
+    };
+  });
+
+  /** Outline being drawn point by point (including the rubber band to the pointer). */
+  protected readonly draft = computed(() => {
+    const draft = this.state.draft();
+    if (!draft) return null;
+    const points = draft.cursor ? [...draft.points, draft.cursor] : draft.points;
+    return { points: toPoints(points), corners: draft.points, guide: draft.guide, first: draft.points[0] ?? null };
   });
 
   protected readonly furniture = computed(() => {
@@ -212,7 +273,7 @@ export class FloorPlanComponent {
     }
     const unit = this.settings()?.unit ?? 'cm';
     const obstacles = [
-      ...floor.rooms.flatMap(wallRects),
+      ...axisAlignedWallBounds(floor),
       ...floor.furniture.filter((other) => other.id !== item.id).map(furnitureBounds),
     ];
     return computeClearances(furnitureBounds(item), obstacles)
@@ -287,6 +348,7 @@ export class FloorPlanComponent {
 
   protected onPointerMove(event: PointerEvent): void {
     if (!this.pointers.has(event.pointerId)) {
+      if (this.state.draft()) this.updateDraftCursor(event);
       return;
     }
     this.pointers.set(event.pointerId, this.toScreen(event));
@@ -311,6 +373,7 @@ export class FloorPlanComponent {
       return;
     }
     this.gesture = null;
+    this.panning.set(false);
     if (gesture) this.finishGesture(gesture, event);
   }
 
@@ -318,9 +381,20 @@ export class FloorPlanComponent {
     this.pointers.delete(event.pointerId);
     this.clearLongPress();
     this.gesture = null;
+    this.panning.set(false);
     this.state.preview.set(null);
     this.marquee.set(null);
-    this.drawRect.set(null);
+    this.drawOutline.set(null);
+  }
+
+  protected onDoubleClick(event: MouseEvent): void {
+    const hit = hitTest(event.target);
+    const room = this.state.selectedRoom();
+    if (this.state.draft()) {
+      this.useCases.finishDraft();
+    } else if (hit.handle === 'vertex' && room) {
+      this.useCases.removeVertex(room.id, hit.index);
+    }
   }
 
   protected onWheel(event: WheelEvent): void {
@@ -363,10 +437,31 @@ export class FloorPlanComponent {
 
     if (!floor) return null;
     if (isPanButton) return { kind: 'pan', last: screen, clickRoomId: null, moved: false };
-    if (this.state.tool() === 'draw-room') return { kind: 'draw', startWorld: world, moved: false };
+    if (this.state.tool() === 'draw-room') {
+      return this.state.draft()
+        ? { kind: 'draw-point', moved: false }
+        : { kind: 'draw', startWorld: world, moved: false };
+    }
+
+    const selectedRoom = this.state.selectedRoom();
+    if ((hit.handle === 'vertex' || hit.handle === 'midpoint') && selectedRoom) {
+      const edges = wallEdges(selectedRoom);
+      const insert =
+        hit.handle === 'midpoint'
+          ? { wall: hit.index, point: lerpVec(edges[hit.index].start, edges[hit.index].end, 0.5) }
+          : null;
+      const session = new VertexDragSession(
+        floor,
+        selectedRoom.id,
+        insert ? hit.index + 1 : hit.index,
+        this.snapOptions(event),
+        insert,
+      );
+      return { kind: 'vertex', session, startWorld: world, moved: false };
+    }
 
     const item = this.singleSelection();
-    if (hit.handle && item) {
+    if ((hit.handle === 'resize' || hit.handle === 'rotate') && item) {
       return hit.handle === 'resize'
         ? { kind: 'resize', item, startWorld: world, moved: false }
         : { kind: 'rotate', item, moved: false };
@@ -387,9 +482,10 @@ export class FloorPlanComponent {
       };
     }
 
-    return isTouch
-      ? { kind: 'pan', last: screen, clickRoomId: hit.roomId, moved: false }
-      : { kind: 'marquee', startWorld: world, additive: event.shiftKey, clickRoomId: hit.roomId, moved: false };
+    // Dragging empty space (or a room floor) moves the view; Shift + drag draws a selection marquee.
+    return event.shiftKey && !isTouch
+      ? { kind: 'marquee', startWorld: world, additive: true, clickRoomId: hit.roomId, moved: false }
+      : { kind: 'pan', last: screen, clickRoomId: hit.roomId, moved: false };
   }
 
   private startFurnitureDrag(id: EntityId, event: PointerEvent, world: Vec2, isTouch: boolean): Gesture | null {
@@ -433,6 +529,7 @@ export class FloorPlanComponent {
 
     switch (gesture.kind) {
       case 'pan':
+        this.panning.set(true);
         this.state.viewport.update((viewport) =>
           panBy(viewport, vec(screen.x - gesture.last.x, screen.y - gesture.last.y)),
         );
@@ -451,23 +548,22 @@ export class FloorPlanComponent {
           gesture.session.preview(vec(world.x - gesture.startWorld.x, world.y - gesture.startWorld.y)),
         );
         break;
-      case 'resize': {
-        const grid = this.snapOptions(event).enabled ? (this.settings()?.gridSize ?? null) : null;
-        const resized = resizeFromCorner(
-          gesture.item,
-          vec(world.x - gesture.startWorld.x, world.y - gesture.startWorld.y),
-          grid,
+      case 'resize':
+      case 'rotate':
+        this.previewTransform(gesture, world, event);
+        break;
+      case 'vertex':
+        this.state.preview.set(
+          gesture.session.preview(vec(world.x - gesture.startWorld.x, world.y - gesture.startWorld.y)).preview,
         );
-        this.previewItem(resized);
+        break;
+      case 'draw': {
+        const floor = this.store.activeFloor();
+        if (floor) this.drawOutline.set(drawnRectangle(floor, gesture.startWorld, world, this.snapOptions(event)));
         break;
       }
-      case 'rotate': {
-        const step = this.snapOptions(event).enabled ? FREE_ROTATION_SNAP_DEGREES : null;
-        this.previewItem({ ...gesture.item, rotation: rotationTowards(gesture.item, world, step) });
-        break;
-      }
-      case 'draw':
-        this.drawRect.set(drawnRoomBounds(gesture.startWorld, world, this.snapOptions(event)));
+      case 'draw-point':
+        this.updateDraftCursor(event);
         break;
     }
   }
@@ -516,15 +612,75 @@ export class FloorPlanComponent {
         }
         break;
       }
-      case 'draw': {
-        const bounds = this.drawRect();
-        this.drawRect.set(null);
-        if (bounds && isValidRoomSize(bounds)) {
-          this.useCases.addRoomFromBounds(bounds);
-          this.state.tool.set('select');
+      case 'vertex': {
+        const after = preview?.rooms.get(gesture.session.before.id);
+        if (gesture.moved && after && !preview?.invalidRoomId) {
+          this.useCases.commitRoomShape(gesture.session.before, after);
         }
         break;
       }
+      case 'draw':
+        this.finishDraw(gesture, event);
+        break;
+      case 'draw-point':
+        this.addDraftPoint(event);
+        break;
+    }
+  }
+
+  // ── Drawing an outline point by point ────────────────────────────────────
+
+  private snappedDraftPoint(event: PointerEvent): { point: Vec2; guide: readonly [Vec2, Vec2] | null } {
+    this.svgRect ??= this.svg().nativeElement.getBoundingClientRect();
+    const world = this.toWorld(this.toScreen(event));
+    const floor = this.store.activeFloor();
+    const drawn = this.state.draft()?.points ?? [];
+    return floor ? snapDrawPoint(floor, world, drawn, this.snapOptions(event)) : { point: world, guide: null };
+  }
+
+  private updateDraftCursor(event: PointerEvent): void {
+    const { point, guide } = this.snappedDraftPoint(event);
+    this.state.draft.update((draft) => (draft ? { ...draft, cursor: point, guide } : draft));
+  }
+
+  private addDraftPoint(event: PointerEvent): void {
+    const { point } = this.snappedDraftPoint(event);
+    const draft = this.state.draft();
+    const points = draft?.points ?? [];
+    if (points.length >= 3 && distance(point, points[0]) < 1) {
+      this.useCases.finishDraft();
+      return;
+    }
+    if (points.length > 0 && distance(point, points[points.length - 1]) < 1) {
+      return;
+    }
+    this.state.draft.set({ points: [...points, point], cursor: point, guide: null });
+  }
+
+  private previewTransform(
+    gesture: Extract<Gesture, { kind: 'resize' | 'rotate' }>,
+    world: Vec2,
+    event: PointerEvent,
+  ): void {
+    const snapping = this.snapOptions(event).enabled;
+    if (gesture.kind === 'resize') {
+      const grid = snapping ? (this.settings()?.gridSize ?? null) : null;
+      const delta = vec(world.x - gesture.startWorld.x, world.y - gesture.startWorld.y);
+      this.previewItem(resizeFromCorner(gesture.item, delta, grid));
+    } else {
+      const step = snapping ? FREE_ROTATION_SNAP_DEGREES : null;
+      this.previewItem({ ...gesture.item, rotation: rotationTowards(gesture.item, world, step) });
+    }
+  }
+
+  private finishDraw(gesture: Extract<Gesture, { kind: 'draw' }>, event: PointerEvent): void {
+    const outline = this.drawOutline();
+    this.drawOutline.set(null);
+    if (gesture.moved && outline && isValidRoomSize(outline)) {
+      this.useCases.addRoomWithPoints(outline);
+      this.state.tool.set('select');
+    } else if (!gesture.moved) {
+      this.addDraftPoint(event);
     }
   }
 

@@ -75,3 +75,44 @@ h3 {
   color: var(--ds-color-text-muted);
   font-size: var(--ds-font-size-sm);
 }
+
+.disclosure {
+  border: 1px solid var(--ds-color-border);
+  border-radius: var(--ds-radius-md);
+  padding: var(--ds-space-2) var(--ds-space-3);
+
+  summary {
+    cursor: pointer;
+    font-weight: var(--ds-font-weight-medium);
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+  }
+
+  &[open] summary {
+    margin-bottom: var(--ds-space-2);
+  }
+}
+
+.corner-row {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--ds-space-2);
+  margin-bottom: var(--ds-space-2);
+}
+
+.corner-index {
+  align-self: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--ds-color-text-muted);
+}
+
+.wall-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space-2);
+  padding: var(--ds-space-1) 0;
+  font-size: var(--ds-font-size-sm);
+}

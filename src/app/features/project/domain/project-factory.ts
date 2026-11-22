@@ -10,8 +10,10 @@ import {
   OpeningKind,
   Project,
   Room,
-  WallSide,
+  WallIndex,
 } from './model';
+import { Vec2 } from '../../../core/domain/geometry';
+import { rectanglePoints } from './room-geometry';
 
 export interface RoomInput {
   readonly name: string;
@@ -20,16 +22,22 @@ export interface RoomInput {
   readonly width?: number;
   readonly depth?: number;
   readonly height?: number;
+  /** Explicit outline; takes precedence over x/y/width/depth. */
+  readonly points?: readonly Vec2[];
 }
 
 export function createRoom(input: RoomInput): Room {
   return {
     id: createId('room'),
     name: input.name,
-    x: input.x ?? 0,
-    y: input.y ?? 0,
-    width: input.width ?? ROOM_DEFAULTS.width,
-    depth: input.depth ?? ROOM_DEFAULTS.depth,
+    points:
+      input.points ??
+      rectanglePoints(
+        input.x ?? 0,
+        input.y ?? 0,
+        input.width ?? ROOM_DEFAULTS.width,
+        input.depth ?? ROOM_DEFAULTS.depth,
+      ),
     height: input.height ?? ROOM_DEFAULTS.height,
     wallThickness: ROOM_DEFAULTS.wallThickness,
     floorColor: ROOM_DEFAULTS.floorColor,
@@ -38,7 +46,7 @@ export function createRoom(input: RoomInput): Room {
   };
 }
 
-export function createOpening(kind: OpeningKind, wall: WallSide, offset: number): Opening {
+export function createOpening(kind: OpeningKind, wall: WallIndex, offset: number): Opening {
   const defaults = kind === 'door' ? DOOR_DEFAULTS : WINDOW_DEFAULTS;
   return { id: createId(kind), kind, wall, offset, ...defaults };
 }

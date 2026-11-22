@@ -1,10 +1,11 @@
+import { Vec2 } from '../../../core/domain/geometry';
 import { EntityId } from '../../../core/domain/id';
 import { LengthUnit } from '../../../core/domain/units';
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
-export type WallSide = 'north' | 'east' | 'south' | 'west';
-export const WALL_SIDES: readonly WallSide[] = ['north', 'east', 'south', 'west'];
+/** Index of a wall: wall i runs from `points[i]` to `points[i + 1]` of its room. */
+export type WallIndex = number;
 
 export type OpeningKind = 'door' | 'window';
 
@@ -26,8 +27,8 @@ export const FURNITURE_CATEGORIES: readonly FurnitureCategory[] = [
 export interface Opening {
   readonly id: EntityId;
   readonly kind: OpeningKind;
-  readonly wall: WallSide;
-  /** Distance from the start of the wall (north/south: from the left, east/west: from the top). */
+  readonly wall: WallIndex;
+  /** Distance from the start point of the wall along its inner face. */
   readonly offset: number;
   readonly width: number;
   readonly height: number;
@@ -38,11 +39,11 @@ export interface Opening {
 export interface Room {
   readonly id: EntityId;
   readonly name: string;
-  /** Top-left inner corner on the floor plan. */
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly depth: number;
+  /**
+   * Inner outline (floor polygon) on the floor plan, at least three points, clockwise on screen.
+   * Walls are derived from the edges and extend outwards by `wallThickness`.
+   */
+  readonly points: readonly Vec2[];
   readonly height: number;
   readonly wallThickness: number;
   readonly floorColor: string;

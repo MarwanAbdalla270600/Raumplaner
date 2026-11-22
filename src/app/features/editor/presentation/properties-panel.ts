@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { normalizeAngle } from '../../../core/domain/geometry';
+import { normalizeAngle, vec } from '../../../core/domain/geometry';
+import { formatLength } from '../../../core/domain/units';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslationKey } from '../../../core/i18n/translations/de';
 import {
@@ -15,8 +16,8 @@ import {
 } from '../../../design-system/components';
 import { ProjectStore } from '../../project/application/project-store';
 import { DIMENSION_LIMITS } from '../../project/domain/defaults';
-import { FURNITURE_CATEGORIES, FurnitureItem, Opening, WALL_SIDES } from '../../project/domain/model';
-import { maxOpeningOffset } from '../../project/domain/room-geometry';
+import { FURNITURE_CATEGORIES, FurnitureItem, Opening } from '../../project/domain/model';
+import { maxOpeningOffset, roomOrigin, roomSize, wallEdges } from '../../project/domain/room-geometry';
 import { EditorState } from '../application/editor-state';
 import { EditorUseCases, FurniturePatch, OpeningPatch } from '../application/editor-use-cases';
 import { ROTATION_STEP_DEGREES } from '../domain/shortcuts';
@@ -65,8 +66,19 @@ export class PropertiesPanelComponent {
       label: this.i18n.t(`category.${category}` as TranslationKey),
     })),
   );
+  protected readonly roomGeometry = computed(() => {
+    const room = this.room();
+    if (!room) return null;
+    const unit = this.unit();
+    const locale = this.i18n.intlLocale();
+    const walls = wallEdges(room).map((edge) => ({
+      index: edge.index,
+      label: this.i18n.t('props.wallLabel', { index: edge.index + 1, length: formatLength(edge.length, unit, locale) }),
+    }));
+    return { origin: roomOrigin(room), size: roomSize(room), walls };
+  });
   protected readonly wallOptions = computed(() =>
-    WALL_SIDES.map((side) => ({ value: side, label: this.i18n.t(`wall.${side}` as TranslationKey) })),
+    (this.roomGeometry()?.walls ?? []).map((wall) => ({ value: String(wall.index), label: wall.label })),
   );
   protected readonly gridOptions = [1, 5, 10, 25, 50].map((size) => ({ value: String(size), label: `${size} cm` }));
 
@@ -84,6 +96,28 @@ export class PropertiesPanelComponent {
   protected updateRoom(patch: Parameters<EditorUseCases['updateRoom']>[1]): void {
     const room = this.room();
     if (room) this.useCases.updateRoom(room.id, patch);
+  }
+
+  protected setCorner(index: number, axis: 'x' | 'y', value: number): void {
+    const room = this.room();
+    const point = room?.points[index];
+    if (room && point) {
+      this.useCases.setVertex(room.id, index, axis === 'x' ? vec(value, point.y) : vec(point.x, value));
+    }
+  }
+
+  protected removeCorner(index: number): void {
+    const room = this.room();
+    if (room) this.useCases.removeVertex(room.id, index);
+  }
+
+  protected attachRoom(wall: number): void {
+    const room = this.room();
+    if (room) this.useCases.attachRoom(room.id, wall);
+  }
+
+  protected setOpeningWall(opening: Opening, value: string): void {
+    this.updateOpening(opening, { wall: Number(value) });
   }
 
   protected updateOpening(opening: Opening, patch: OpeningPatch): void {

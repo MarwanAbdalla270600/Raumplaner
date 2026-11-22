@@ -147,10 +147,32 @@ export class EditorPage {
     if (this.state.show3d() || isTextInputTarget(event.target) || this.isDialogOpen()) {
       return;
     }
+    if (this.state.draft() && this.handleDraftKey(event.key)) {
+      event.preventDefault();
+      return;
+    }
     const action = resolveShortcut(event);
     if (action) {
       event.preventDefault();
       this.perform(action);
+    }
+  }
+
+  /** Keys while an outline is being drawn: Enter closes it, Escape cancels, Backspace removes a point. */
+  private handleDraftKey(key: string): boolean {
+    switch (key) {
+      case 'Enter':
+        this.useCases.finishDraft();
+        return true;
+      case 'Escape':
+        this.useCases.cancelDraft();
+        return true;
+      case 'Backspace':
+      case 'Delete':
+        this.useCases.removeLastDraftPoint();
+        return true;
+      default:
+        return false;
     }
   }
 
@@ -179,6 +201,7 @@ export class EditorPage {
         break;
       case 'clearSelection':
         this.state.clearSelection();
+        this.state.draft.set(null);
         this.state.tool.set('select');
         break;
     }

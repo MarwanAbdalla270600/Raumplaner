@@ -1,5 +1,6 @@
 import { Aabb, aabbCenter, aabbHeight, aabbWidth } from '../../../core/domain/geometry';
 import { Room } from '../../project/domain/model';
+import { roomInnerBounds } from '../../project/domain/room-geometry';
 
 export type CameraPresetId = 'top' | 'perspective' | 'room';
 export const CAMERA_PRESETS: readonly CameraPresetId[] = ['top', 'perspective', 'room'];
@@ -44,7 +45,8 @@ export function cameraPose(preset: CameraPresetId, bounds: Aabb, room: Room | nu
         target: { x: center.x, y: 0, z: center.y },
       };
     case 'room': {
-      const r = room ?? { x: bounds.minX, y: bounds.minY, width: aabbWidth(bounds), depth: aabbHeight(bounds) };
+      const box = room ? roomInnerBounds(room) : bounds;
+      const r = { x: box.minX, y: box.minY, width: aabbWidth(box), depth: aabbHeight(box) };
       return {
         position: { x: r.x + r.width / 2, y: EYE_HEIGHT_CM, z: r.y + r.depth * (1 - ROOM_VIEW_INSET_RATIO) },
         target: { x: r.x + r.width / 2, y: EYE_HEIGHT_CM * 0.75, z: r.y },

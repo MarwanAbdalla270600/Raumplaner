@@ -53,6 +53,7 @@ export class EditorToolbarComponent {
 
   protected toggleDrawTool(): void {
     this.state.tool.update((tool) => (tool === 'draw-room' ? 'select' : 'draw-room'));
+    this.state.draft.set(null);
   }
 
   protected selectFloor(id: string): void {

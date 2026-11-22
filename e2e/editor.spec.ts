@@ -82,11 +82,27 @@ test.describe('editor (desktop)', () => {
     const maxY = Math.max(...valid.map((b) => b.y + b.height)) + 30;
 
     await page.keyboard.press('Escape');
+    await page.keyboard.down('Shift');
     await page.mouse.move(minX, minY);
     await page.mouse.down();
     await page.mouse.move(maxX, maxY, { steps: 8 });
     await page.mouse.up();
+    await page.keyboard.up('Shift');
     await expect(page.locator('[data-item-id].selected')).toHaveCount(3);
+  });
+
+  test('pans the view by dragging empty space', async ({ page }) => {
+    const plan = await page.getByTestId('floor-plan').boundingBox();
+    if (!plan) throw new Error('no plan');
+    const label = page.locator('.room-label').first();
+    const before = await label.boundingBox();
+    await page.mouse.move(plan.x + 30, plan.y + 30);
+    await page.mouse.down();
+    await page.mouse.move(plan.x + 130, plan.y + 90, { steps: 6 });
+    await page.mouse.up();
+    const after = await label.boundingBox();
+    expect(Math.round((after?.x ?? 0) - (before?.x ?? 0))).toBe(100);
+    expect(Math.round((after?.y ?? 0) - (before?.y ?? 0))).toBe(60);
   });
 
   test('adds a room via the form and a door via the properties panel', async ({ page }) => {
@@ -124,6 +140,72 @@ test.describe('editor (desktop)', () => {
     await page.keyboard.press('Control+z');
     await page.keyboard.press('Control+z');
     await expect(page.locator('.room-label')).toHaveCount(1);
+  });
+
+  test('draws a polygonal room corner by corner', async ({ page }) => {
+    await page.getByRole('button', { name: /Raum zeichnen|Draw room/ }).click();
+    const plan = await page.getByTestId('floor-plan').boundingBox();
+    if (!plan) throw new Error('no plan');
+    const x0 = plan.x + plan.width - 320;
+    const y0 = plan.y + 60;
+    const corners = [
+      [0, 0],
+      [200, 0],
+      [200, 100],
+      [120, 180],
+      [0, 180],
+    ];
+    for (const [dx, dy] of corners) {
+      await page.mouse.click(x0 + dx, y0 + dy);
+    }
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.room-label')).toHaveCount(2);
+    await expect(page.locator('[data-handle=vertex]')).toHaveCount(5);
+  });
+
+  test('reshapes a room by dragging a wall midpoint', async ({ page }) => {
+    await page.locator('.room-floor').first().click();
+    const midpoint = page.locator('[data-handle=midpoint]').first();
+    const box = await midpoint.boundingBox();
+    if (!box) throw new Error('no handle');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, box.y - 40, { steps: 6 });
+    await page.mouse.up();
+    await expect(page.locator('[data-handle=vertex]')).toHaveCount(5);
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('[data-handle=vertex]')).toHaveCount(4);
+  });
+
+  test('attaches a neighbouring room with a shared wall and door', async ({ page }) => {
+    await page.locator('.room-floor').first().click();
+    await page.getByTestId('walls-disclosure').locator('summary').click();
+    await page.getByTestId('attach-room-1').click();
+    await expect(page.locator('.room-label')).toHaveCount(2);
+    await expect(page.locator('.opening-symbol')).toHaveCount(1);
+  });
+
+  test('walks through the apartment in the 3D walkthrough', async ({ page }) => {
+    await addFromCatalog(page, 'bed-double');
+    await page.getByTestId('open-3d').click();
+    const viewer = page.getByTestId('viewer-3d');
+    await viewer.getByTestId('start-tour').click();
+    await expect(viewer.getByTestId('tour-pad')).toBeVisible();
+    const forward = viewer.getByTestId('tour-fwd');
+    const box = await forward.boundingBox();
+    if (!box) throw new Error('no button');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await expect(forward).toHaveClass(/active/);
+    await page.mouse.up();
+    await expect(forward).not.toHaveClass(/active/);
+    await page.keyboard.down('ArrowLeft');
+    await page.keyboard.up('ArrowLeft');
+    // Escape leaves the walkthrough first, then closes the viewer.
+    await page.keyboard.press('Escape');
+    await expect(viewer.getByTestId('tour-pad')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(viewer).toHaveCount(0);
   });
 
   test('persists changes across reloads', async ({ page }) => {
